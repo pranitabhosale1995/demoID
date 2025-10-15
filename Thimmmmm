@@ -1,0 +1,68 @@
+import { createTheme } from "@mui/material/styles";
+
+const crystaGlassTheme = createTheme({
+  palette: {
+    mode: "light",
+    primary: { main: "#007BFF", contrastText: "#FFD700" },
+    secondary: { main: "#FFD700" },
+    background: { default: "transparent", paper: "rgba(255,255,255,0.25)" },
+    text: { primary: "#000", secondary: "#C5A200" },
+  },
+
+  typography: {
+    fontFamily: "'Poppins', sans-serif",
+    button: { textTransform: "none", fontWeight: 600, color: "#FFD700" },
+  },
+
+  shape: { borderRadius: 12 },
+
+  components: {
+    MuiCssBaseline: {
+      styleOverrides: `
+        html, body, #root {
+          height: 100%;
+          width: 100%;
+          margin: 0;
+          padding: 0;
+        }
+        body {
+          background: linear-gradient(
+            to right,
+            rgba(255,255,255,0.3),
+            rgba(247,231,177,0.45),
+            rgba(212,175,55,0.35)
+          );
+          background-attachment: fixed;
+          background-size: cover;
+          backdrop-filter: blur(18px) saturate(140%);
+          -webkit-backdrop-filter: blur(18px) saturate(140%);
+          overflow-x: hidden;
+        }
+      `,
+    },
+
+    MuiButton: {
+      styleOverrides: {
+        root: {
+          backgroundColor: "#007BFF",
+          color: "#FFD700",
+          borderRadius: 10,
+          fontWeight: 600,
+          "&:hover": { backgroundColor: "#0056b3" },
+        },
+      },
+    },
+
+    MuiPaper: {
+      styleOverrides: {
+        root: {
+          background: "rgba(255,255,255,0.25)",
+          backdropFilter: "blur(12px)",
+          boxShadow: "0 8px 32px rgba(0,0,0,0.15)",
+        },
+      },
+    },
+  },
+});
+
+export default crystaGlassTheme;
