@@ -1,0 +1,146 @@
+import { createTheme } from "@mui/material/styles";
+
+const crystaGlassTheme = createTheme({
+  palette: {
+    mode: "light",
+    primary: {
+      main: "#007BFF", // blue buttons, sidebar
+      contrastText: "#FFFFFF", // white text on buttons
+    },
+    secondary: {
+      main: "#FFD700", // golden highlight
+    },
+    background: {
+      default: "rgba(255,255,255,0.4)", // frosted white
+      paper: "rgba(255,255,255,0.25)", // glass card effect
+    },
+    text: {
+      primary: "#000000", // black text
+      secondary: "#C5A200", // golden text tone
+    },
+  },
+
+  typography: {
+    fontFamily: "'Poppins', sans-serif",
+    allVariants: {
+      color: "#000000",
+    },
+    button: {
+      fontWeight: 600,
+      textTransform: "none",
+      color: "#FFD700", // golden text on blue buttons
+    },
+  },
+
+  shape: {
+    borderRadius: 12,
+  },
+
+  components: {
+    MuiCssBaseline: {
+      styleOverrides: `
+        body {
+          background: linear-gradient(to left, rgba(255,255,255,0.3), rgba(247,231,177,0.5), rgba(212,175,55,0.4));
+          background-attachment: fixed;
+          background-size: cover;
+          backdrop-filter: blur(15px);
+          -webkit-backdrop-filter: blur(15px);
+          margin: 0;
+          padding: 0;
+          overflow-x: hidden;
+        }
+      `,
+    },
+
+    // 🔹 Buttons (blue bg + golden text)
+    MuiButton: {
+      styleOverrides: {
+        root: {
+          backgroundColor: "#007BFF",
+          color: "#FFD700",
+          fontWeight: 600,
+          borderRadius: "10px",
+          transition: "0.3s ease",
+          "&:hover": {
+            backgroundColor: "#0056b3",
+          },
+        },
+      },
+    },
+
+    // 🔹 AppBar (toolbar / header)
+    MuiAppBar: {
+      styleOverrides: {
+        root: {
+          backgroundColor: "#007BFF",
+          color: "#FFFFFF",
+          backdropFilter: "blur(10px)",
+          boxShadow: "0 4px 20px rgba(0,0,0,0.2)",
+        },
+      },
+    },
+
+    // 🔹 Drawer / Sidebar
+    MuiDrawer: {
+      styleOverrides: {
+        paper: {
+          backgroundColor: "#007BFF",
+          color: "#FFFFFF",
+          backdropFilter: "blur(10px)",
+        },
+      },
+    },
+
+    // 🔹 Icons (golden on blue)
+    MuiSvgIcon: {
+      styleOverrides: {
+        root: {
+          color: "#FFD700",
+        },
+      },
+    },
+
+    // 🔹 TextFields (dark golden border)
+    MuiOutlinedInput: {
+      styleOverrides: {
+        root: {
+          "& .MuiOutlinedInput-notchedOutline": {
+            borderColor: "#C5A200",
+          },
+          "&:hover .MuiOutlinedInput-notchedOutline": {
+            borderColor: "#FFD700",
+          },
+          "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+            borderColor: "#FFD700",
+          },
+        },
+      },
+    },
+
+    // 🔹 Table headers (dark golden)
+    MuiTableHead: {
+      styleOverrides: {
+        root: {
+          backgroundColor: "#B8860B",
+          "& .MuiTableCell-root": {
+            color: "#fff",
+            fontWeight: 600,
+          },
+        },
+      },
+    },
+
+    // 🔹 Paper / Card (glassy)
+    MuiPaper: {
+      styleOverrides: {
+        root: {
+          background: "rgba(255,255,255,0.25)",
+          backdropFilter: "blur(12px)",
+          boxShadow: "0 8px 32px rgba(0,0,0,0.15)",
+        },
+      },
+    },
+  },
+});
+
+export default crystaGlassTheme;
