@@ -1,0 +1,124 @@
+// src/theme/crystaWave.js
+
+import { createTheme } from "@mui/material/styles";
+
+const crystaWave = createTheme({
+  palette: {
+    mode: "light",
+    primary: {
+      main: "#5D3FD3",       // purple
+      light: "#A28DF0",      // soft lavender
+      dark: "#3E2C70",       // dark purple for hover
+      contrastText: "#ffffff",
+    },
+    secondary: {
+      main: "#F5C542",       // golden accent
+      contrastText: "#000000",
+    },
+    background: {
+      default: "transparent", // background image वापरतेस म्हणून transparent ठेवलं
+      paper: "rgba(255,255,255,0.2)", // glass effect
+    },
+    text: {
+      primary: "#2A1E4F",     // dark purple text
+      secondary: "#3E2C70",   // softer text
+    },
+  },
+
+  typography: {
+    fontFamily: "'Poppins', sans-serif",
+    h4: {
+      fontWeight: 700,
+      fontSize: "1.75rem",
+      color: "#2A1E4F",
+    },
+    h6: {
+      fontWeight: 600,
+      fontSize: "1.1rem",
+      color: "#3E2C70",
+    },
+    body1: {
+      fontSize: "0.95rem",
+      color: "#3E2C70",
+    },
+    button: {
+      textTransform: "none",
+      fontWeight: 600,
+      color: "#fff",
+    },
+  },
+
+  components: {
+    MuiButton: {
+      styleOverrides: {
+        root: {
+          borderRadius: 10,
+          padding: "10px 20px",
+          background: "linear-gradient(90deg, #5D3FD3, #A28DF0)",
+          color: "#fff",
+          "&:hover": {
+            background: "linear-gradient(90deg, #4B2EB5, #8E7BE9)",
+          },
+        },
+      },
+    },
+
+    MuiAppBar: {
+      styleOverrides: {
+        root: {
+          background: "rgba(255, 255, 255, 0.2)",
+          backdropFilter: "blur(10px)",
+          color: "#2A1E4F",
+          boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
+        },
+      },
+    },
+
+    MuiDrawer: {
+      styleOverrides: {
+        paper: {
+          background: "linear-gradient(180deg, #5D3FD3 0%, #3E2C70 100%)",
+          color: "#fff",
+          borderRight: "1px solid rgba(255,255,255,0.2)",
+        },
+      },
+    },
+
+    MuiListItemButton: {
+      styleOverrides: {
+        root: {
+          borderRadius: "8px",
+          margin: "4px 8px",
+          "&.Mui-selected": {
+            backgroundColor: "rgba(245,197,66,0.2)", // golden highlight
+            color: "#F5C542",
+          },
+          "&:hover": {
+            backgroundColor: "rgba(255,255,255,0.1)",
+          },
+        },
+      },
+    },
+
+    MuiIconButton: {
+      styleOverrides: {
+        root: {
+          color: "#F5C542", // gold icons in toolbar
+        },
+      },
+    },
+
+    MuiPaper: {
+      styleOverrides: {
+        root: {
+          background: "rgba(255,255,255,0.25)",
+          backdropFilter: "blur(12px)",
+          borderRadius: "15px",
+          border: "1px solid rgba(255,255,255,0.3)",
+        },
+      },
+    },
+  },
+});
+
+export default crystaWave;
