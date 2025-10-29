@@ -1,0 +1,83 @@
+// src/features/auth/components/LoginStyles.js
+import { styled, keyframes } from "@mui/system";
+import { Box, Paper } from "@mui/material";
+
+const fadeInUp = keyframes`
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+`;
+
+// Root container with background image (no heavy blur by default)
+export const RootContainer = styled(Box)(({ theme }) => ({
+  minHeight: "100vh",
+  width: "100%",
+  position: "relative",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  // IMPORTANT: use background-image only (no backdrop-filter that blurs the whole image)
+  backgroundImage: `url('/src/assets/BackGrounds/purpleGlassBg.jpg')`,
+  backgroundSize: "cover",
+  backgroundPosition: "center",
+  backgroundRepeat: "no-repeat",
+  // subtle overlay (very light) to keep contrast
+  "&::before": {
+    content: '""',
+    position: "absolute",
+    inset: 0,
+    background: "linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02))",
+    zIndex: 0,
+    pointerEvents: "none",
+  },
+}));
+
+// Main content wrapper (THIS MUST be flex, not using Grid's internal row logic)
+export const ContentWrapper = styled(Box)(({ theme }) => ({
+  width: "100%",
+  maxWidth: 1200,
+  display: "flex",
+  gap: theme.spacing(6),
+  alignItems: "flex-start",
+  justifyContent: "space-between",
+  padding: theme.spacing(6),
+  position: "relative",
+  zIndex: 1,
+  [theme.breakpoints.down("md")]: {
+    flexDirection: "column",
+    padding: theme.spacing(4),
+    gap: theme.spacing(4),
+    alignItems: "center",
+    textAlign: "center",
+  },
+}));
+
+export const LeftColumn = styled(Box)(({ theme }) => ({
+  flex: 1,
+  minWidth: 0,
+  maxWidth: "calc(60%)",
+  [theme.breakpoints.down("md")]: {
+    maxWidth: "100%",
+  },
+}));
+
+export const RightColumn = styled(Box)(({ theme }) => ({
+  flex: "0 0 420px", // fixed card width on desktop
+  display: "flex",
+  justifyContent: "center",
+  [theme.breakpoints.down("lg")]: {
+    flex: "0 0 380px",
+  },
+  [theme.breakpoints.down("md")]: {
+    flex: "1 1 100%",
+  },
+}));
+
+export const GlassCard = styled(Paper)(({ theme }) => ({
+  width: "100%",
+  borderRadius: 20,
+  padding: theme.spacing(3),
+  background: "rgba(255,255,255,0.18)", // glassy
+  border: "1px solid rgba(255,255,255,0.22)",
+  boxShadow: "0 12px 30px rgba(7, 12, 20, 0.12)",
+  animation: `${fadeInUp} 0.6s ease`,
+}));
