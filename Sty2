@@ -1,0 +1,80 @@
+// src/features/auth/components/LoginStyles.js
+import { styled, keyframes } from "@mui/system";
+import Box from "@mui/material/Box";
+import Grid from "@mui/material/Grid";
+import Paper from "@mui/material/Paper";
+
+// subtle fade animation
+const fadeInUp = keyframes`
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+`;
+
+// Root container with wave bg overlay
+export const RootContainer = styled(Box)(({ theme, backgroundImage }) => ({
+  minHeight: "100vh",
+  width: "100vw",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  position: "relative",
+  overflow: "hidden",
+  backgroundImage: `url(${backgroundImage})`,
+  backgroundSize: "cover",
+  backgroundPosition: "center",
+  backgroundRepeat: "no-repeat",
+  // soft glass overlay so waves stay subtle
+  "&::after": {
+    content: '""',
+    position: "absolute",
+    inset: 0,
+    background: "rgba(255,255,255,0.15)",
+    backdropFilter: "blur(6px)",
+    WebkitBackdropFilter: "blur(6px)",
+    zIndex: 0,
+  },
+}));
+
+export const ContentGrid = styled(Grid)(({ theme }) => ({
+  width: "100%",
+  maxWidth: 1200,
+  margin: "0 auto",
+  padding: theme.spacing(6),
+  alignItems: "center",
+  justifyContent: "space-between",
+  position: "relative",
+  zIndex: 1, // above overlay
+}));
+
+export const LeftPanel = styled(Box)(({ theme }) => ({
+  paddingRight: theme.spacing(4),
+  [theme.breakpoints.down("md")]: {
+    paddingRight: theme.spacing(2),
+    marginBottom: theme.spacing(4),
+  },
+}));
+
+export const GlassCard = styled(Paper)(({ theme }) => ({
+  padding: theme.spacing(4),
+  borderRadius: 24,
+  background: "rgba(255, 255, 255, 0.18)",
+  backdropFilter: "blur(18px)",
+  WebkitBackdropFilter: "blur(18px)",
+  border: "1px solid rgba(255, 255, 255, 0.25)",
+  boxShadow: "0 10px 40px rgba(0,0,0,0.12)",
+  animation: `${fadeInUp} 0.7s ease`,
+  width: "100%",
+  maxWidth: 420,
+}));
+
+export const FeatureList = styled("ul")(({ theme }) => ({
+  listStyle: "none",
+  padding: 0,
+  marginTop: theme.spacing(3),
+  "& li": {
+    display: "flex",
+    alignItems: "center",
+    gap: theme.spacing(1.5),
+    marginBottom: theme.spacing(2),
+  },
+}));
