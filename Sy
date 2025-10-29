@@ -1,0 +1,66 @@
+// src/features/auth/components/LoginStyles.js
+import { styled, keyframes } from "@mui/system";
+import { Box, Grid, Paper } from "@mui/material";
+import bg from "../../../assets/BackGrounds/purpleGlassBg.jpg"; // 👈 तुझ्या image path नुसार
+
+// Animation
+const fadeInUp = keyframes`
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+`;
+
+// Root background (wave + overlay)
+export const RootContainer = styled(Box)(({ theme }) => ({
+  minHeight: "100vh",
+  width: "100vw",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  position: "relative",
+  backgroundImage: `url(${bg})`,
+  backgroundSize: "cover",
+  backgroundPosition: "center",
+  backgroundRepeat: "no-repeat",
+  overflow: "hidden",
+  "&::after": {
+    content: '""',
+    position: "absolute",
+    inset: 0,
+    background: "rgba(255,255,255,0.15)",
+    backdropFilter: "blur(6px)",
+    WebkitBackdropFilter: "blur(6px)",
+    zIndex: 0,
+  },
+}));
+
+// 🔧 FIXED: flexDirection row + responsive column
+export const ContentGrid = styled(Grid)(({ theme }) => ({
+  display: "flex",
+  flexDirection: "row",
+  alignItems: "center",
+  justifyContent: "space-between",
+  width: "100%",
+  maxWidth: "1200px",
+  margin: "0 auto",
+  padding: theme.spacing(6),
+  position: "relative",
+  zIndex: 1,
+  [theme.breakpoints.down("md")]: {
+    flexDirection: "column",
+    textAlign: "center",
+    gap: theme.spacing(4),
+  },
+}));
+
+export const GlassCard = styled(Paper)(({ theme }) => ({
+  padding: theme.spacing(4),
+  borderRadius: 24,
+  background: "rgba(255, 255, 255, 0.18)",
+  backdropFilter: "blur(18px)",
+  WebkitBackdropFilter: "blur(18px)",
+  border: "1px solid rgba(255, 255, 255, 0.25)",
+  boxShadow: "0 10px 40px rgba(0,0,0,0.12)",
+  animation: `${fadeInUp} 0.7s ease`,
+  width: "100%",
+  maxWidth: 420,
+}));
