@@ -1,0 +1,162 @@
+// LoginStyles.js
+import { styled } from "@mui/material/styles";
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
+import Paper from "@mui/material/Paper";
+import TextField from "@mui/material/TextField";
+import Button from "@mui/material/Button";
+
+export const Root = styled(Box)(({ theme, bgurl }) => ({
+  minHeight: "100vh",
+  width: "100%",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  position: "relative",
+  overflow: "hidden",
+  backgroundImage: `url(${bgurl})`,
+  backgroundRepeat: "no-repeat",
+  backgroundPosition: "center center",
+  backgroundSize: "cover",
+  // gentle overlay so image shows but text stays readable
+  "&::after": {
+    content: '""',
+    position: "absolute",
+    inset: 0,
+    background:
+      "linear-gradient(180deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.06) 50%, rgba(255,255,255,0.04) 100%)",
+    pointerEvents: "none",
+  },
+}));
+
+export const Content = styled("div")(({ theme }) => ({
+  position: "relative",
+  zIndex: 2,
+  width: "100%",
+  maxWidth: 1300,
+  padding: theme.spacing(4),
+  boxSizing: "border-box",
+  display: "flex",
+  gap: theme.spacing(6),
+  alignItems: "stretch",
+  justifyContent: "space-between",
+  [theme.breakpoints.down("md")]: {
+    flexDirection: "column-reverse",
+    gap: theme.spacing(4),
+    padding: theme.spacing(3),
+  },
+}));
+
+export const LeftCol = styled("div")(({ theme }) => ({
+  flex: "1 1 55%",
+  display: "flex",
+  flexDirection: "column",
+  gap: theme.spacing(3),
+  justifyContent: "center",
+  [theme.breakpoints.down("md")]: {
+    flex: "1 1 100%",
+    textAlign: "left",
+  },
+}));
+
+export const RightCol = styled("div")(({ theme }) => ({
+  flex: "0 0 38%",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  [theme.breakpoints.down("md")]: {
+    flex: "1 1 100%",
+  },
+}));
+
+export const LogoWrap = styled("div")(({ theme }) => ({
+  display: "flex",
+  alignItems: "center",
+  gap: theme.spacing(2),
+}));
+
+export const BigHeading = styled(Typography)(({ theme }) => ({
+  fontWeight: 700,
+  fontSize: 28,
+  lineHeight: 1.15,
+  color: theme.palette.text.primary,
+  [theme.breakpoints.down("sm")]: { fontSize: 22 },
+}));
+
+export const SubText = styled(Typography)(({ theme }) => ({
+  fontSize: 16,
+  color: theme.palette.text.secondary,
+  lineHeight: 1.6,
+}));
+
+export const FeatureList = styled("ul")(({ theme }) => ({
+  margin: 0,
+  padding: 0,
+  listStyle: "none",
+  display: "flex",
+  flexDirection: "column",
+  gap: theme.spacing(2),
+  marginTop: theme.spacing(2),
+}));
+
+export const FeatureItem = styled("li")(({ theme }) => ({
+  display: "flex",
+  alignItems: "center",
+  gap: theme.spacing(1.5),
+  color: theme.palette.text.primary,
+  fontSize: 16,
+}));
+
+export const Bullet = styled("span")(({ theme }) => ({
+  width: 14,
+  height: 14,
+  borderRadius: "50%",
+  background: theme.palette.primary.main,
+  display: "inline-block",
+}));
+
+export const GlassCard = styled(Paper)(({ theme }) => ({
+  width: "100%",
+  maxWidth: 420,
+  borderRadius: 20,
+  padding: theme.spacing(4),
+  boxShadow: "0 10px 30px rgba(16,24,40,0.15)",
+  background: "linear-gradient(180deg, rgba(255,255,255,0.85), rgba(255,255,255,0.78))",
+  border: `1px solid rgba(255,255,255,0.4)`,
+  backdropFilter: "blur(6px)",
+  [theme.breakpoints.down("md")]: {
+    maxWidth: "100%",
+    padding: theme.spacing(3),
+  },
+}));
+
+export const FormTitle = styled(Typography)(({ theme }) => ({
+  fontWeight: 700,
+  marginBottom: theme.spacing(2),
+  color: theme.palette.text.primary,
+}));
+
+export const StyledTextField = styled(TextField)(({ theme }) => ({
+  "& .MuiOutlinedInput-root": {
+    borderRadius: 10,
+    background: "rgba(255,255,255,0.95)",
+  },
+  "& .MuiOutlinedInput-notchedOutline": {
+    borderColor: "rgba(0,0,0,0.06)",
+  },
+}));
+
+export const PrimaryButton = styled(Button)(({ theme }) => ({
+  marginTop: theme.spacing(2),
+  width: "100%",
+  padding: theme.spacing(1.5, 2),
+  borderRadius: 10,
+  background: theme.palette.primary.main,
+  color: "#fff",
+  fontWeight: 700,
+  boxShadow: "none",
+  "&:hover": {
+    background: theme.palette.primary.dark,
+    boxShadow: "none",
+  },
+}));
