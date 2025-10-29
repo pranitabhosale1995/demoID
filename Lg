@@ -1,0 +1,123 @@
+// src/features/auth/components/LoginPort.jsx
+import React from "react";
+import { Box, Grid, Typography, TextField, Button, Avatar } from "@mui/material";
+import fincoreLogo from "../../../assets/Logos/logosss.svg";
+import {
+  RootContainer,
+  ContentGrid,
+  GlassCard,
+} from "./LoginStyles";
+
+const LoginPort = () => {
+  const infoPoints = [
+    "End-to-end 256-bit SSL encryption",
+    "Role-based Multi-factor access control",
+    "Real-time tracking and auditing",
+  ];
+
+  return (
+    <RootContainer>
+      <ContentGrid container spacing={4}>
+        {/* LEFT SIDE - Info */}
+        <Grid item xs={12} md={6}>
+          <Box>
+            <Box display="flex" alignItems="center" gap={2} mb={3}>
+              <Avatar
+                src={fincoreLogo}
+                alt="FinCore"
+                sx={{ width: 64, height: 64, bgcolor: "transparent" }}
+              />
+              <Box>
+                <Typography variant="h5" color="primary.main" fontWeight={700}>
+                  FinCore
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Empowering Data
+                </Typography>
+              </Box>
+            </Box>
+
+            <Typography variant="h4" fontWeight={700} mb={2} color="text.primary">
+              Welcome to FinCore Reporting Portal
+            </Typography>
+
+            <Typography variant="body1" color="text.secondary" mb={3}>
+              Seamlessly access and generate critical financial reports with
+              FinCore – SBI's centralized technology platform for secure,
+              high integrity financial data access. Designed for internal use.
+            </Typography>
+
+            {infoPoints.map((text, index) => (
+              <Box key={index} display="flex" alignItems="center" gap={1.5} mb={1.5}>
+                <Box
+                  sx={{
+                    width: 18,
+                    height: 18,
+                    borderRadius: "50%",
+                    bgcolor: "secondary.main",
+                  }}
+                />
+                <Typography variant="body2" color="text.primary">
+                  {text}
+                </Typography>
+              </Box>
+            ))}
+          </Box>
+        </Grid>
+
+        {/* RIGHT SIDE - Login Card */}
+        <Grid item xs={12} md={6} display="flex" justifyContent="center">
+          <GlassCard elevation={3}>
+            <Typography
+              variant="h6"
+              align="center"
+              mb={3}
+              fontWeight={700}
+              color="text.primary"
+            >
+              Sign In
+            </Typography>
+
+            <form>
+              <TextField
+                label="User ID"
+                variant="outlined"
+                fullWidth
+                size="small"
+                margin="normal"
+              />
+              <TextField
+                label="Password"
+                variant="outlined"
+                fullWidth
+                size="small"
+                type="password"
+                margin="normal"
+              />
+              <Button
+                fullWidth
+                variant="contained"
+                sx={{
+                  mt: 2,
+                  py: 1.2,
+                  borderRadius: 2,
+                  background:
+                    "linear-gradient(90deg, #654ea3 0%, #eaafc8 100%)",
+                  boxShadow: "0 4px 15px rgba(101, 78, 163, 0.3)",
+                  "&:hover": {
+                    background:
+                      "linear-gradient(90deg, #5b42a6 0%, #d895b1 100%)",
+                  },
+                }}
+              >
+                SIGN IN
+              </Button>
+            </form>
+          </GlassCard>
+        </Grid>
+      </ContentGrid>
+    </RootContainer>
+  );
+};
+
+export default LoginPort;
