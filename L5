@@ -1,0 +1,79 @@
+// LoginPort.jsx
+import React from "react";
+import { Container } from "@mui/material";
+import {
+  Root,
+  Content,
+  LeftCol,
+  RightCol,
+  LogoWrap,
+  BigHeading,
+  SubText,
+  FeatureList,
+  FeatureItem,
+  Bullet,
+  GlassCard,
+  FormTitle,
+  StyledTextField,
+  PrimaryButton,
+} from "./LoginStyles";
+
+import LogoImg from "../../../assets/Logos/logosss.svg"; // adjust path if needed
+import BgImg from "../../../assets/BackGrounds/purpleGlassBg.jpg"; // adjust path if needed
+
+export default function LoginPort() {
+  return (
+    <Root bgurl={BgImg}>
+      <Container maxWidth="lg">
+        <Content>
+          <LeftCol>
+            <LogoWrap>
+              <img src={LogoImg} alt="FinCore" style={{ width: 90, height: "auto" }} />
+              <div>
+                <div style={{ fontWeight: 700, fontSize: 20 }}>FinCore</div>
+                <div style={{ fontSize: 13, color: "rgba(0,0,0,0.6)" }}>Empowering Data</div>
+              </div>
+            </LogoWrap>
+
+            <BigHeading variant="h1">Welcome to FinCore Reporting Portal</BigHeading>
+
+            <SubText>
+              Seamlessly access and generate critical financial reports with FinCore — SBI's centralized
+              technology platform for secure, high integrity financial data access. Designed for internal
+              operations.
+            </SubText>
+
+            <FeatureList>
+              <FeatureItem>
+                <Bullet />
+                <span>End-to-end 256-bit SSL encryption</span>
+              </FeatureItem>
+              <FeatureItem>
+                <Bullet />
+                <span>Role-based Multi-factor access control</span>
+              </FeatureItem>
+              <FeatureItem>
+                <Bullet />
+                <span>Real-time tracking and auditing</span>
+              </FeatureItem>
+            </FeatureList>
+          </LeftCol>
+
+          <RightCol>
+            <GlassCard elevation={3}>
+              <FormTitle variant="h6">Sign In</FormTitle>
+
+              <form>
+                <StyledTextField fullWidth label="User ID" placeholder="Enter user id" margin="dense" />
+                <StyledTextField fullWidth label="Password" placeholder="Enter password" type="password" margin="dense" />
+                <PrimaryButton type="submit" variant="contained">
+                  SIGN IN
+                </PrimaryButton>
+              </form>
+            </GlassCard>
+          </RightCol>
+        </Content>
+      </Container>
+    </Root>
+  );
+}
