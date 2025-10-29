@@ -1,0 +1,63 @@
+// src/theme/crystaWave.js
+import { createTheme } from "@mui/material/styles";
+import bgImg from "../assets/backgrounds/purpleGlassBg.jpg";
+
+const crystaWave = createTheme({
+  palette: {
+    mode: "light",
+    primary: {
+      main: "#5D3FD3",
+      light: "#A28DF0",
+      dark: "#3E2C70",
+      contrastText: "#ffffff",
+    },
+    secondary: {
+      main: "#F5C542",
+    },
+    background: {
+      default: "transparent",
+      paper: "rgba(255,255,255,0.2)",
+    },
+    text: {
+      primary: "#2A1E4F",
+      secondary: "#3E2C70",
+    },
+  },
+
+  typography: {
+    fontFamily: "'Poppins', sans-serif",
+    button: { textTransform: "none", fontWeight: 600 },
+  },
+
+  components: {
+    MuiCssBaseline: {
+      styleOverrides: {
+        body: {
+          backgroundImage: `url(${bgImg})`,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          backgroundRepeat: "no-repeat",
+          backgroundAttachment: "fixed",
+          height: "100vh",
+          width: "100vw",
+          overflowX: "hidden",
+          margin: 0,
+          padding: 0,
+        },
+      },
+    },
+
+    MuiPaper: {
+      styleOverrides: {
+        root: {
+          background: "rgba(255,255,255,0.25)",
+          backdropFilter: "blur(10px)",
+          borderRadius: "15px",
+          border: "1px solid rgba(255,255,255,0.3)",
+        },
+      },
+    },
+  },
+});
+
+export default crystaWave;
