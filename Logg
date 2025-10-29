@@ -1,0 +1,123 @@
+// src/features/auth/components/LoginPort.jsx
+import React from "react";
+import Typography from "@mui/material/Typography";
+import TextField from "@mui/material/TextField";
+import Button from "@mui/material/Button";
+import Box from "@mui/material/Box";
+import Grid from "@mui/material/Grid";
+import Avatar from "@mui/material/Avatar";
+import Icon from "@mui/material/Icon";
+
+import bgWave from "../../../assets/BackGrounds/wave-bg-2k.jpg"; // use your image path
+import fincoreLogo from "../../../assets/Logos/logosss.svg"; // use your logo path
+
+import {
+  RootContainer,
+  ContentGrid,
+  LeftPanel,
+  GlassCard,
+  FeatureList,
+} from "./LoginStyles";
+
+const LoginPort = () => {
+  return (
+    <RootContainer backgroundImage={bgWave}>
+      <ContentGrid container spacing={2}>
+        <Grid item xs={12} md={7}>
+          <LeftPanel>
+            <Box display="flex" alignItems="center" gap={2} mb={3}>
+              <Avatar
+                src={fincoreLogo}
+                alt="FinCore"
+                sx={{ width: 64, height: 64, bgcolor: "transparent" }}
+                variant="circular"
+              />
+              <Box>
+                <Typography variant="h6">FinCore</Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Empowering Data
+                </Typography>
+              </Box>
+            </Box>
+
+            <Typography variant="h4" gutterBottom>
+              Welcome to FinCore Reporting Portal
+            </Typography>
+
+            <Typography variant="body1">
+              Seamlessly access and generate critical financial reports with
+              FinCore — SBI's centralized technology platform for secure, high
+              integrity financial data access. Designed for internal
+              operations.
+            </Typography>
+
+            <FeatureList>
+              <li>
+                <Box component="span" display="inline-flex" sx={{ width: 40 }}>
+                  <Icon>check_circle</Icon>
+                </Box>
+                <Typography>End-to-end 256-bit SSL encryption</Typography>
+              </li>
+              <li>
+                <Box component="span" display="inline-flex" sx={{ width: 40 }}>
+                  <Icon>verified_user</Icon>
+                </Box>
+                <Typography>Role-based multi-factor access control</Typography>
+              </li>
+              <li>
+                <Box component="span" display="inline-flex" sx={{ width: 40 }}>
+                  <Icon>analytics</Icon>
+                </Box>
+                <Typography>Real-time tracking and auditing</Typography>
+              </li>
+            </FeatureList>
+          </LeftPanel>
+        </Grid>
+
+        <Grid item xs={12} md={5} display="flex" justifyContent="flex-end">
+          <GlassCard elevation={0}>
+            <Typography variant="h6" gutterBottom>
+              Sign In
+            </Typography>
+
+            <Box component="form" noValidate>
+              <TextField
+                fullWidth
+                label="User ID"
+                variant="outlined"
+                margin="normal"
+                size="small"
+              />
+              <TextField
+                fullWidth
+                label="Password"
+                type="password"
+                variant="outlined"
+                margin="normal"
+                size="small"
+              />
+
+              <Button
+                type="submit"
+                variant="contained"
+                fullWidth
+                sx={{
+                  mt: 2,
+                  py: 1.2,
+                  borderRadius: 2,
+                  background: "linear-gradient(90deg,#654ea3 0%,#eaafc8 100%)",
+                  boxShadow: "0 4px 15px rgba(101,78,163,0.25)",
+                  "&:hover": { background: "linear-gradient(90deg,#5b42a6 0%,#d895b1 100%)" },
+                }}
+              >
+                SIGN IN
+              </Button>
+            </Box>
+          </GlassCard>
+        </Grid>
+      </ContentGrid>
+    </RootContainer>
+  );
+};
+
+export default LoginPort;
