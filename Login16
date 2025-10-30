@@ -1,0 +1,325 @@
+// src/features/auth/components/LoginPort.jsx
+import React, { useState } from "react";
+import axios from "axios";
+import { styled } from "@mui/material/styles";
+import IconButton from "@mui/material/IconButton";
+import InputAdornment from "@mui/material/InputAdornment";
+import Visibility from "@mui/icons-material/Visibility";
+import VisibilityOff from "@mui/icons-material/VisibilityOff";
+
+import {
+  Root,
+  Content,
+  LeftCol,
+  RightCol,
+  LogoWrap,
+  BigHeading,
+  SubText,
+  FeatureList,
+  FeatureItem,
+  Bullet,
+  GlassCard,
+  FormTitle,
+  StyledTextField,
+  PrimaryButton,
+} from "./LoginStyles";
+
+import LogoImg from "../../../assets/Logos/logosss.svg";
+import BgImg from "../../../assets/BackGrounds/purpleGlassBg.jpg";
+import LoginErrorDialog from "./LoginErrorDialog"; // path must be correct
+
+// Local small styled components (keeps file tidy, no inline CSS)
+const LogoText = styled("div")(({ theme }) => ({
+  display: "flex",
+  flexDirection: "column",
+  gap: theme.spacing(0.25),
+}));
+
+const BrandName = styled("div")(({ theme }) => ({
+  fontWeight: 700,
+  fontSize: 20,
+  color: theme.palette.text.primary,
+}));
+
+const BrandTag = styled("div")(({ theme }) => ({
+  fontSize: 13,
+  color: "rgba(0,0,0,0.6)",
+}));
+
+export default function LoginPort() {
+  const [userId, setUserId] = useState("");
+  const [password, setPassword] = useState("");
+  const [page, setPage] = useState("HOME"); // HOME | PASSWORD | UPDATE
+  const [loading, setLoading] = useState(false);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [dialogHeading, setDialogHeading] = useState("");
+  const [dialogContent, setDialogContent] = useState("");
+  const [error, setError] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+
+  // Validation rules you specified:
+  // - plain 7 digits
+  // - v/V + 7 digits (total 8 chars)
+  // - tcs + 7 digits (case-insensitive)
+  // - tcsv/tcsV + 7 digits (case-insensitive)
+  const validateId = (id = "") => {
+    const s = id.trim();
+    if (!s) return false;
+    const onlyDigits = /^\d{7}$/;
+    const vPlus7 = /^[vV]\d{7}$/;
+    const tcsPlus7 = /^tcs\d{7}$/i;
+    const tcsvPlus7 = /^tcs[vV]\d{7}$/i;
+    return (
+      onlyDigits.test(s) ||
+      vPlus7.test(s) ||
+      tcsPlus7.test(s) ||
+      tcsvPlus7.test(s)
+    );
+  };
+
+  const openLoginErrorDialog = (title, content) => {
+    setDialogHeading(title);
+    setDialogContent(content);
+    setDialogOpen(true);
+  };
+
+  const closeLoginErrorDialog = () => {
+    setDialogOpen(false);
+  };
+
+  // check-user API call (keeps same logic)
+  const checkUser = async () => {
+    setError("");
+    if (!validateId(userId)) {
+      setError(
+        "Invalid User ID. Use 7 digits OR v+7 OR tcs+7 or tcsV+7 (case-insensitive)."
+      );
+      return false;
+    }
+
+    setLoading(true);
+    try {
+      const resp = await axios.post("/LS/auth/check-user", {
+        userId: userId.trim(),
+      });
+
+      const result = resp?.data;
+      if (!result) {
+        openLoginErrorDialog("Login Error", "No response from server");
+        setLoading(false);
+        return false;
+      }
+
+      // follow your original state handling
+      if (result.userStatus === "INVALID") {
+        setError("User Id does not exist");
+        setLoading(false);
+        return false;
+      }
+
+      if (result.passwordLoginStatus === "INACTIVE") {
+        openLoginErrorDialog(
+          "Password Locked",
+          "You cannot login through password at the moment. Please try SSO."
+        );
+        setLoading(false);
+        return false;
+      }
+
+      if (result.updatePassword === true) {
+        setPage("UPDATE");
+        setLoading(false);
+        return true;
+      }
+
+      // success -> show password input
+      setPage("PASSWORD");
+      setLoading(false);
+      return true;
+    } catch (err) {
+      console.error("checkUser error:", err);
+      openLoginErrorDialog("Login Error", "Something went wrong. Try again later.");
+      setLoading(false);
+      return false;
+    }
+  };
+
+  // login submit (password auth). Keep logic same as your backend expects.
+  // This function only demonstrates structure; replace endpoint and handling as needed.
+  const submitLogin = async () => {
+    if (!password) {
+      setError("Enter password");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const resp = await axios.post("/LS/auth/login", {
+        userId: userId.trim(),
+        password,
+      });
+
+      const data = resp?.data;
+      // handle token etc as your original code does
+      // e.g. localStorage.setItem("accessToken", data.accessToken)
+      // then redirect to dashboard
+      console.log("login response:", data);
+      setLoading(false);
+      // TODO: redirect on success
+    } catch (err) {
+      console.error("login error:", err);
+      openLoginErrorDialog("Login Error", "Invalid credentials or server error.");
+      setLoading(false);
+    }
+  };
+
+  // handle main form submit
+  const handleSubmit = async (e) => {
+    e?.preventDefault();
+    setError("");
+    if (page === "HOME") {
+      await checkUser();
+      return;
+    }
+    if (page === "PASSWORD") {
+      await submitLogin();
+      return;
+    }
+    // handle update if needed
+  };
+
+  // toggle password visibility
+  const handleTogglePassword = () => {
+    setShowPassword((s) => !s);
+  };
+
+  return (
+    <Root bgurl={BgImg}>
+      <Content>
+        <LeftCol>
+          <LogoWrap>
+            <img src={LogoImg} alt="FinCore" style={{ width: 90, height: "auto" }} />
+            <LogoText>
+              <BrandName>FinCore</BrandName>
+              <BrandTag>Empowering Data</BrandTag>
+            </LogoText>
+          </LogoWrap>
+
+          <BigHeading variant="h1">Welcome to FinCore Reporting Portal</BigHeading>
+
+          <SubText>
+            Seamlessly access and generate critical financial reports with FinCore — SBI's centralized
+            technology platform for secure, high integrity financial data access. Designed for internal
+            operations.
+          </SubText>
+
+          <FeatureList>
+            <FeatureItem>
+              <Bullet />
+              <span>End-to-end 256-bit SSL encryption</span>
+            </FeatureItem>
+            <FeatureItem>
+              <Bullet />
+              <span>Role-based Multi-factor access control</span>
+            </FeatureItem>
+            <FeatureItem>
+              <Bullet />
+              <span>Real-time tracking and auditing</span>
+            </FeatureItem>
+          </FeatureList>
+        </LeftCol>
+
+        <RightCol>
+          <GlassCard elevation={3}>
+            <FormTitle variant="h6">Sign In</FormTitle>
+
+            <form onSubmit={handleSubmit} noValidate>
+              <StyledTextField
+                fullWidth
+                label="User ID"
+                value={userId}
+                onChange={(e) => {
+                  // allow typing but clear error
+                  setUserId(e.target.value);
+                  setError("");
+                }}
+                margin="normal"
+                disabled={page !== "HOME"} // locked after moving to password/update
+                helperText={
+                  error ||
+                  (page !== "HOME" ? "User ID locked — proceed with password." : "Enter your user id")
+                }
+              />
+
+              {page === "PASSWORD" && (
+                <>
+                  <StyledTextField
+                    fullWidth
+                    label="Password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    margin="normal"
+                    type={showPassword ? "text" : "password"}
+                    InputProps={{
+                      endAdornment: (
+                        <InputAdornment position="end">
+                          <IconButton onClick={handleTogglePassword} edge="end" size="large">
+                            {showPassword ? <VisibilityOff /> : <Visibility />}
+                          </IconButton>
+                        </InputAdornment>
+                      ),
+                    }}
+                  />
+
+                  <PrimaryButton
+                    type="submit"
+                    variant="contained"
+                    disabled={loading}
+                    sx={{ marginTop: 2 }}
+                  >
+                    {loading ? "Signing in..." : "SIGN IN"}
+                  </PrimaryButton>
+                </>
+              )}
+
+              {page === "HOME" && (
+                <PrimaryButton
+                  type="submit"
+                  variant="contained"
+                  disabled={loading}
+                  sx={{ marginTop: 2 }}
+                >
+                  {loading ? "Checking..." : "Proceed"}
+                </PrimaryButton>
+              )}
+
+              {page === "UPDATE" && (
+                <>
+                  <SubText sx={{ marginTop: 2 }}>
+                    Your account requires a password update. Continue to update flow.
+                  </SubText>
+                  <PrimaryButton
+                    variant="contained"
+                    sx={{ marginTop: 2 }}
+                    onClick={() => {
+                      /* route to update password page if you have one */
+                    }}
+                  >
+                    Continue to update
+                  </PrimaryButton>
+                </>
+              )}
+            </form>
+          </GlassCard>
+        </RightCol>
+      </Content>
+
+      <LoginErrorDialog
+        showErrorDialog={dialogOpen}
+        onDialogClose={closeLoginErrorDialog}
+        title={dialogHeading}
+        content={dialogContent}
+      />
+    </Root>
+  );
+}
