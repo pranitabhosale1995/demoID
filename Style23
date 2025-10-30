@@ -1,0 +1,139 @@
+// src/features/auth/components/LoginStyles.js
+import { Box, Typography, Paper, TextField, Button, styled } from "@mui/material";
+
+export const Root = styled(Box)({
+  width: "100%",
+  minHeight: "100vh",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  background: "linear-gradient(135deg, #fff9ed, #fdf6e3)",
+  padding: "2rem",
+});
+
+export const Content = styled(Box)({
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "flex-start",
+  gap: "3rem",
+  width: "100%",
+});
+
+export const LeftCol = styled(Box)({
+  flex: 1,
+  display: "flex",
+  flexDirection: "column",
+  justifyContent: "center",
+});
+
+export const RightCol = styled(Box)({
+  flex: 1,
+  display: "flex",
+  justifyContent: "center",
+  alignItems: "center",
+});
+
+export const LogoWrap = styled(Box)({
+  display: "flex",
+  alignItems: "center",
+  gap: "0.8rem",
+  marginBottom: "2rem",
+});
+
+export const LogoImage = styled("img")({
+  width: 90,
+  height: "auto",
+});
+
+export const LogoTextContainer = styled(Box)({
+  display: "flex",
+  flexDirection: "column",
+});
+
+export const LogoTitle = styled(Typography)({
+  fontWeight: 700,
+  fontSize: "1.25rem",
+  lineHeight: 1.2,
+});
+
+export const LogoSubtitle = styled(Typography)({
+  fontSize: "0.8rem",
+  color: "rgba(0,0,0,0.6)",
+});
+
+export const GlassCard = styled(Paper)({
+  backdropFilter: "blur(10px)",
+  background: "rgba(255,255,255,0.7)",
+  borderRadius: "16px",
+  padding: "2rem",
+  width: "100%",
+  maxWidth: "400px",
+});
+
+export const StyledTextField = styled(TextField)({
+  "& .MuiInputBase-root": {
+    borderRadius: "10px",
+  },
+});
+
+export const PrimaryButton = styled(Button)({
+  background: "linear-gradient(90deg, #d4a017, #f5d76e)",
+  fontWeight: 600,
+  color: "#000",
+  "&:hover": {
+    background: "linear-gradient(90deg, #c49b13, #f4cf58)",
+  },
+  borderRadius: "10px",
+  padding: "0.6rem",
+  width: "100%",
+  marginTop: "1rem",
+});
+
+export const TitleText = styled(Typography)({
+  fontWeight: 700,
+  fontSize: "1.8rem",
+  marginBottom: "1rem",
+  color: "#333",
+});
+
+export const DescriptionText = styled(Typography)({
+  fontSize: "0.95rem",
+  color: "#555",
+  marginBottom: "1.5rem",
+  maxWidth: "500px",
+});
+
+export const FeatureList = styled("ul")({
+  listStyle: "none",
+  padding: 0,
+  margin: 0,
+  display: "flex",
+  flexDirection: "column",
+  gap: "0.5rem",
+});
+
+export const FeatureItem = styled("li")({
+  display: "flex",
+  alignItems: "center",
+  fontSize: "0.9rem",
+  color: "#444",
+});
+
+export const FeatureBullet = styled("span")({
+  width: "6px",
+  height: "6px",
+  borderRadius: "50%",
+  background: "#d4a017",
+  display: "inline-block",
+  marginRight: "8px",
+});
+
+export const FormContainer = styled(Box)({
+  display: "flex",
+  flexDirection: "column",
+});
+
+export const FormTitle = styled(Typography)({
+  marginBottom: "1rem",
+  fontWeight: 600,
+});
