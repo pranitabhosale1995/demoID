@@ -1,0 +1,246 @@
+// src/features/auth/components/LoginPort.jsx
+import React, { useState, useContext } from "react";
+import axios from "axios";
+import { styled } from "@mui/material/styles";
+import Box from "@mui/material/Box";
+import Container from "@mui/material/Container";
+import Button from "@mui/material/Button";
+import Person from "@mui/icons-material/Person";
+
+// styles file (you already have this file)
+import {
+  Root,
+  Content,
+  LeftCol,
+  RightCol,
+  LogoWrap,
+  BigHeading,
+  SubText,
+  FeatureList,
+  FeatureItem,
+  Bullet,
+  GlassCard,
+  FormTitle,
+  StyledTextField,
+  PrimaryButton,
+} from "./LoginStyles";
+
+// assets
+import LogoImg from "../../../assets/Logos/logosss.svg";
+import BgImg from "../../../assets/BackGrounds/purpleGlassBg.jpg";
+
+// small styled component for the logo image (keeps no inline style)
+const LogoImgEl = styled("img")(({ theme }) => ({
+  width: 90,
+  height: "auto",
+  display: "block",
+}));
+
+export default function LoginPort() {
+  // states (kept naming consistent with your existing code)
+  const [userId, setUserId] = useState("");
+  const [validId, setValidId] = useState(false);
+  const [error, setError] = useState("");
+  const [page, setPage] = useState("HOME"); // HOME | PASSWORD | UPDATE
+  const [dialogHeading, setDialogHeading] = useState("");
+  const [dialogContent, setDialogContent] = useState("");
+  const [showErrorDialog, setShowErrorDialog] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  // If you have a background context in your app, you can keep using it.
+  // const { currentBackground } = useContext(BackgroundContext);
+
+  // helper to open login error dialog (keeps your previous behaviour)
+  const openLoginErrorDialog = (heading, content) => {
+    setDialogHeading(heading || "Login Error");
+    setDialogContent(content || "Something went wrong");
+    setShowErrorDialog(true);
+  };
+
+  // validateId: keep the same validation rules you used previously
+  const validateId = (id) => {
+    if (!id) return false;
+    const onlyDigitRegex = /^\d{7}$/; // your previous sample used 7 digits
+    const externalUserRegex = /^(?:tcs|v|tcsv)\d{7}$/i;
+    if (onlyDigitRegex.test(id) || externalUserRegex.test(id)) {
+      return true;
+    }
+    return false;
+  };
+
+  /**
+   * checkUser:
+   * - Uses same logic paths as your original flow.
+   * - Defensive about API result shape.
+   * - Sets page / validId / dialogs using your existing helpers.
+   */
+  const checkUser = async () => {
+    setError("");
+
+    // quick frontend validation
+    if (!validateId(userId)) {
+      setError("Invalid User ID");
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      const resp = await axios.post("/LS/auth/check-user", {
+        userId,
+      });
+
+      const result = resp?.data || {};
+      console.log("check-user response :: ", result);
+
+      // 1) If API explicitly marks invalid OR missing userStatus
+      if (!result.userStatus || result.userStatus === "INVALID") {
+        setError("User Id does not exist");
+        setValidId(false);
+        return;
+      }
+
+      // 2) If password login is disabled for the user
+      if (result.passwordLoginStatus === "INACTIVE") {
+        openLoginErrorDialog(
+          "Password Locked",
+          "You cannot login through password at the moment. Please try to login with SSO."
+        );
+        return;
+      }
+
+      // 3) If user must update password (force change)
+      if (result.updatePassword === true) {
+        // keep the same page names you used earlier
+        setValidId(true);
+        setPage("UPDATE");
+        return;
+      }
+
+      // 4) Active user and password login allowed -> proceed to password page
+      if (result.userStatus === "ACTIVE" && result.passwordLoginStatus === "ACTIVE") {
+        setValidId(true);
+        setPage("PASSWORD");
+        return;
+      }
+
+      // 5) Fallback: show dialog with message from API or generic
+      openLoginErrorDialog(
+        "Login Not Allowed",
+        result.message || "You are not allowed to login. Please contact administrator."
+      );
+    } catch (err) {
+      console.error("checkUser error:", err);
+      setShowErrorDialog(true);
+      openLoginErrorDialog("Login Error", "Something went wrong, please try again later");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // submit handler for the form if you want pressing enter to call checkUser on HOME page
+  const onSubmit = (e) => {
+    e.preventDefault();
+    if (page === "HOME") {
+      checkUser();
+    }
+  };
+
+  return (
+    <Root bgurl={BgImg}>
+      <Container maxWidth="lg">
+        <Content>
+          <LeftCol>
+            <LogoWrap>
+              <LogoImgEl src={LogoImg} alt="FinCore logo" />
+              <div>
+                <div style={{ fontWeight: 700, fontSize: 20 }}>FinCore</div>
+                <div style={{ fontSize: 13, color: "rgba(0,0,0,0.6)" }}>Empowering Data</div>
+              </div>
+            </LogoWrap>
+
+            <BigHeading variant="h1">Welcome to FinCore Reporting Portal</BigHeading>
+
+            <SubText>
+              Seamlessly access and generate critical financial reports with FinCore — SBI's centralized
+              technology platform for secure, high integrity financial data access. Designed for internal
+              operations.
+            </SubText>
+
+            <FeatureList>
+              <FeatureItem>
+                <Bullet />
+                <span>End-to-end 256-bit SSL encryption</span>
+              </FeatureItem>
+              <FeatureItem>
+                <Bullet />
+                <span>Role-based Multi-factor access control</span>
+              </FeatureItem>
+              <FeatureItem>
+                <Bullet />
+                <span>Real-time tracking and auditing</span>
+              </FeatureItem>
+            </FeatureList>
+          </LeftCol>
+
+          <RightCol>
+            <GlassCard elevation={3}>
+              <FormTitle variant="h6">Sign In</FormTitle>
+
+              <form onSubmit={onSubmit} noValidate>
+                {/* User ID field - disable when already validated & on password page */}
+                <StyledTextField
+                  fullWidth
+                  label="User ID"
+                  placeholder="Enter user id"
+                  margin="dense"
+                  value={userId}
+                  onChange={(e) => setUserId(e.target.value)}
+                  error={Boolean(error)}
+                  helperText={error || ""}
+                  InputProps={{
+                    startAdornment: <Person sx={{ mr: 1, opacity: 0.6 }} />,
+                  }}
+                />
+
+                {/* If front-end already validated, you might render password component instead */}
+                {page === "HOME" && (
+                  <Box sx={{ mt: 1 }}>
+                    <PrimaryButton
+                      type="submit"
+                      variant="contained"
+                      disabled={loading}
+                    >
+                      {loading ? "Checking..." : "SIGN IN"}
+                    </PrimaryButton>
+                  </Box>
+                )}
+
+                {/* If page says PASSWORD, render your LoginWithPassword component (kept as your original) */}
+                {page === "PASSWORD" && (
+                  <Box sx={{ mt: 2 }}>
+                    {/* replace with your real LoginWithPassword component */}
+                    {/* <LoginWithPassword userId={userId} openLoginErrorDialog={openLoginErrorDialog} /> */}
+                    <SubText>Proceed to enter your password (password form component will render here).</SubText>
+                  </Box>
+                )}
+
+                {/* If update password required */}
+                {page === "UPDATE" && (
+                  <Box sx={{ mt: 2 }}>
+                    {/* replace with your UpdatePassword component */}
+                    {/* <UpdatePassword userId={userId} openLoginErrorDialog={openLoginErrorDialog} /> */}
+                    <SubText>Update password required — update password form will render here.</SubText>
+                  </Box>
+                )}
+              </form>
+            </GlassCard>
+          </RightCol>
+        </Content>
+      </Container>
+
+      {/* You can keep dialog markup elsewhere — not rendered here because your project had a global dialog */}
+      {/* Example (optional): show a simple dialog / snackbar. */}
+    </Root>
+  );
+}
