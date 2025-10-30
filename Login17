@@ -1,0 +1,224 @@
+// src/features/auth/components/LoginPort.jsx
+import React, { useState } from "react";
+import axios from "axios";
+import {
+  Root,
+  Content,
+  LeftCol,
+  RightCol,
+  LogoWrap,
+  BigHeading,
+  SubText,
+  FeatureList,
+  FeatureItem,
+  Bullet,
+  GlassCard,
+  FormTitle,
+  StyledTextField,
+  PrimaryButton,
+} from "./LoginStyles";
+import LogoImg from "../../../assets/Logos/Fincore_transperent.svg";
+import BgImg from "../../../assets/BackGrounds/purpleGlassBg.jpg";
+import LoginErrorDialog from "./LoginErrorDialog";
+import LoginWithPassword from "./LoginWithPassword";
+import UpdatePassword from "./UpdatePassword";
+
+export default function LoginPort() {
+  // === STATES ===
+  const [userId, setUserId] = useState("");
+  const [validId, setValidId] = useState(false);
+  const [error, setError] = useState("");
+  const [page, setPage] = useState("HOME"); // HOME | PASSWORD | UPDATE
+  const [dialogHeading, setDialogHeading] = useState("");
+  const [dialogContent, setDialogContent] = useState("");
+  const [showErrorDialog, setShowErrorDialog] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  // === DIALOG HANDLERS ===
+  const handleDialogClose = () => {
+    setShowErrorDialog(false);
+    setDialogHeading("");
+    setDialogContent("");
+  };
+
+  const openLoginErrorDialog = (heading, content) => {
+    setDialogHeading(heading);
+    setDialogContent(content);
+    setShowErrorDialog(true);
+  };
+
+  // === VALIDATION ===
+  const validateId = (id) => {
+    if (!id) return false;
+    const onlyDigitRegex = /^\d{7}$/; // 7-digit numeric
+    const vRegex = /^[vV]\d{7}$/; // v + 7
+    const tcsRegex = /^tcs\d{7}$/i; // tcs + 7
+    const tcsVRegex = /^tcs[vV]\d{7}$/i; // tcsV + 7
+    return (
+      onlyDigitRegex.test(id) ||
+      vRegex.test(id) ||
+      tcsRegex.test(id) ||
+      tcsVRegex.test(id)
+    );
+  };
+
+  // === API CALL: CHECK USER ===
+  const checkUser = async () => {
+    setError("");
+
+    if (!validateId(userId)) {
+      setError("Invalid User ID format");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const resp = await axios.post("/LS/auth/check-user", { userId });
+      const result = resp?.data || {};
+
+      if (!result.userStatus || result.userStatus === "INVALID") {
+        setError("User ID does not exist");
+        setValidId(false);
+        return;
+      }
+
+      if (result.passwordLoginStatus === "INACTIVE") {
+        openLoginErrorDialog(
+          "Password Locked!",
+          "You cannot login using password currently. Please try SSO."
+        );
+        return;
+      }
+
+      if (result.updatePassword === true) {
+        setValidId(true);
+        setPage("UPDATE");
+        return;
+      }
+
+      if (result.userStatus === "ACTIVE" && result.passwordLoginStatus === "ACTIVE") {
+        setValidId(true);
+        setPage("PASSWORD");
+        return;
+      }
+
+      openLoginErrorDialog(
+        "Login Not Allowed",
+        result.message || "Please contact the administrator."
+      );
+    } catch (err) {
+      console.error("❌ checkUser error:", err);
+      openLoginErrorDialog("Login Error", "Something went wrong. Please try again later.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // === FORM SUBMIT ===
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (page === "HOME") checkUser();
+  };
+
+  // === RENDER ===
+  return (
+    <Root bgurl={BgImg}>
+      <Content>
+        {/* LEFT SIDE */}
+        <LeftCol>
+          <LogoWrap>
+            <img src={LogoImg} alt="FinCore" width="90" height="auto" />
+            <div>
+              <div style={{ fontWeight: 700, fontSize: 20 }}>FinCore</div>
+              <div style={{ fontSize: 13, color: "rgba(0,0,0,0.6)" }}>
+                Empowering Data
+              </div>
+            </div>
+          </LogoWrap>
+
+          <BigHeading variant="h1">Welcome to FinCore Reporting Portal</BigHeading>
+
+          <SubText>
+            Seamlessly access and generate critical financial reports with FinCore — SBI's centralized
+            technology platform for secure, high integrity financial data access. Designed for internal
+            operations.
+          </SubText>
+
+          <FeatureList>
+            <FeatureItem>
+              <Bullet /> End-to-end 256-bit SSL encryption
+            </FeatureItem>
+            <FeatureItem>
+              <Bullet /> Role-based Multi-factor access control
+            </FeatureItem>
+            <FeatureItem>
+              <Bullet /> Real-time tracking and auditing
+            </FeatureItem>
+          </FeatureList>
+        </LeftCol>
+
+        {/* RIGHT SIDE */}
+        <RightCol>
+          <GlassCard elevation={3}>
+            <FormTitle variant="h6">Sign In</FormTitle>
+
+            <form onSubmit={handleSubmit} noValidate>
+              {/* USER ID FIELD */}
+              <StyledTextField
+                fullWidth
+                label="User ID"
+                placeholder="Enter your User ID"
+                margin="dense"
+                value={userId}
+                onChange={(e) => setUserId(e.target.value)}
+                error={Boolean(error)}
+                helperText={error || ""}
+                disabled={page !== "HOME"} // disable after verification
+              />
+
+              {/* HOME PAGE (User ID entry) */}
+              {page === "HOME" && (
+                <PrimaryButton
+                  type="submit"
+                  variant="contained"
+                  disabled={loading}
+                  sx={{ mt: 2 }}
+                >
+                  {loading ? "Checking..." : "SIGN IN"}
+                </PrimaryButton>
+              )}
+
+              {/* PASSWORD PAGE */}
+              {page === "PASSWORD" && (
+                <Box sx={{ mt: 2 }}>
+                  <LoginWithPassword
+                    userId={userId}
+                    openLoginErrorDialog={openLoginErrorDialog}
+                  />
+                </Box>
+              )}
+
+              {/* UPDATE PASSWORD PAGE */}
+              {page === "UPDATE" && (
+                <Box sx={{ mt: 2 }}>
+                  <UpdatePassword
+                    userId={userId}
+                    openLoginErrorDialog={openLoginErrorDialog}
+                  />
+                </Box>
+              )}
+            </form>
+          </GlassCard>
+        </RightCol>
+      </Content>
+
+      {/* ERROR DIALOG */}
+      <LoginErrorDialog
+        showErrorDialog={showErrorDialog}
+        title={dialogHeading}
+        content={dialogContent}
+        onDialogClose={handleDialogClose}
+      />
+    </Root>
+  );
+}
