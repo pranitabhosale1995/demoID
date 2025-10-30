@@ -1,0 +1,280 @@
+// src/features/auth/components/LoginPort.jsx
+import React, { useCallback, useMemo, useState } from "react";
+import axios from "axios";
+
+import IconButton from "@mui/material/IconButton";
+import InputAdornment from "@mui/material/InputAdornment";
+import Visibility from "@mui/icons-material/Visibility";
+import VisibilityOff from "@mui/icons-material/VisibilityOff";
+
+import {
+  Root,
+  Content,
+  LeftCol,
+  RightCol,
+  LogoWrap,
+  BigHeading,
+  SubText,
+  FeatureList,
+  FeatureItem,
+  Bullet,
+  GlassCard,
+  FormTitle,
+  StyledTextField,
+  PrimaryButton,
+} from "./LoginStyles";
+
+import LogoImg from "../../../assets/Logos/logosss.svg";
+import BgImg from "../../../assets/BackGrounds/purpleGlassBg.jpg";
+import LoginErrorDialog from "./LoginErrorDialog";
+
+/*
+  Updated LoginPort.jsx
+  - Same business logic as before.
+  - Added password show/hide toggle (eye icon).
+  - Minimal inline styles; main styling stays in LoginStyles.js
+*/
+
+const initial = {
+  userId: "",
+  password: "",
+  page: "HOME", // HOME | PASSWORD | UPDATE
+  loading: false,
+  error: "", // small validation / server message
+  dialog: { open: false, title: "", message: "" },
+};
+
+export default function LoginPort() {
+  const [state, setState] = useState(initial);
+  const [showPassword, setShowPassword] = useState(false);
+  const { userId, password, page, loading, error, dialog } = state;
+
+  // ---------- Validation ----------
+  const validateId = useCallback((raw) => {
+    if (!raw) return false;
+    const v = raw.trim();
+    const onlyDigits = /^\d{7}$/;
+    const vPlus7 = /^[vV]\d{7}$/;
+    const tcsPlus7 = /^tcs\d{7}$/i;
+    const tcsvPlus7 = /^tcs[vV]\d{7}$/i;
+    return onlyDigits.test(v) || vPlus7.test(v) || tcsPlus7.test(v) || tcsvPlus7.test(v);
+  }, []);
+
+  // ---------- Small helpers ----------
+  const set = useCallback((patch) => setState((s) => ({ ...s, ...patch })), []);
+  const openDialog = useCallback((title, message) => set((s) => ({ ...s, dialog: { open: true, title, message } })), [set]);
+  const closeDialog = useCallback(() => set((s) => ({ ...s, dialog: { open: false, title: "", message: "" } })), [set]);
+
+  // ---------- API wrapper (can reuse) ----------
+  const post = useCallback((url, body) => axios.post(url, body), []);
+
+  // ---------- checkUser: same business rules as before ----------
+  const checkUser = useCallback(async () => {
+    set({ error: "", loading: true });
+    try {
+      if (!validateId(userId)) {
+        set({ error: "Invalid User ID format. Please follow allowed patterns.", loading: false });
+        return;
+      }
+
+      const res = await post("/LS/auth/check-user", { userId: userId.trim() });
+      const result = res?.data;
+
+      if (!result) {
+        openDialog("Login Error", "Empty response from server.");
+        set({ loading: false });
+        return;
+      }
+
+      if (result.userStatus === "INVALID") {
+        set({ error: "User Id does not exist", loading: false });
+        return;
+      }
+
+      if (result.passwordLoginStatus === "INACTIVE") {
+        openDialog("Password Locked", "Password login is locked. Use SSO or contact admin.");
+        set({ loading: false });
+        return;
+      }
+
+      if (result.updatePassword === true) {
+        set({ page: "UPDATE", loading: false });
+        return;
+      }
+
+      // success -> show password field (lock userId)
+      set({ page: "PASSWORD", loading: false });
+    } catch (err) {
+      console.error("checkUser error:", err);
+      openDialog("Login Error", "Something went wrong. Please try again later.");
+      set({ loading: false });
+    }
+  }, [userId, validateId, post, openDialog, set]);
+
+  // ---------- submit handler ----------
+  const handleSubmit = useCallback(
+    async (ev) => {
+      ev.preventDefault();
+      if (page === "HOME") {
+        await checkUser();
+        return;
+      }
+
+      // PAGE === PASSWORD -> login using provided password
+      try {
+        set({ loading: true, error: "" });
+        const payload = { userId: userId.trim(), password };
+        const res = await post("/LS/auth/login", payload);
+        // expected: res.data.accessToken etc.
+        // handle token saving + redirect — keep your existing logic here
+        set({ loading: false });
+      } catch (err) {
+        console.error("login error:", err);
+        set({ error: "Invalid credentials or server error", loading: false });
+      }
+    },
+    [page, checkUser, userId, password, post, set]
+  );
+
+  // ---------- UI small actions ----------
+  const handleEditId = useCallback(() => {
+    // allow editing id again
+    set({ page: "HOME", error: "" });
+    setShowPassword(false);
+  }, [set]);
+
+  const toggleShowPassword = useCallback(() => setShowPassword((s) => !s), []);
+
+  const states = useMemo(() => ({ disabledId: page !== "HOME" }), [page]);
+
+  // ---------- Render ----------
+  return (
+    <Root bgurl={BgImg}>
+      <Content>
+        <LeftCol>
+          <LogoWrap>
+            <img src={LogoImg} alt="FinCore" style={{ width: 90, height: "auto" }} />
+            <div>
+              <div style={{ fontWeight: 700, fontSize: 20 }}>FinCore</div>
+              <div style={{ fontSize: 13, color: "rgba(0,0,0,0.55)" }}>Empowering Data</div>
+            </div>
+          </LogoWrap>
+
+          <BigHeading>Welcome to FinCore Reporting Portal</BigHeading>
+
+          <SubText>
+            Seamlessly access and generate critical financial reports with FinCore — SBI's centralized platform for
+            secure, high integrity financial data access.
+          </SubText>
+
+          <FeatureList>
+            <FeatureItem>
+              <Bullet />
+              <span>End-to-end 256-bit SSL encryption</span>
+            </FeatureItem>
+            <FeatureItem>
+              <Bullet />
+              <span>Role-based Multi-factor access control</span>
+            </FeatureItem>
+            <FeatureItem>
+              <Bullet />
+              <span>Real-time tracking and auditing</span>
+            </FeatureItem>
+          </FeatureList>
+        </LeftCol>
+
+        <RightCol>
+          <GlassCard elevation={3}>
+            <FormTitle variant="h6">Sign In</FormTitle>
+
+            <form onSubmit={handleSubmit} aria-label="login form">
+              <StyledTextField
+                label="User ID"
+                value={userId}
+                onChange={(e) => set({ userId: e.target.value })}
+                margin="normal"
+                fullWidth
+                disabled={states.disabledId}
+                helperText={error || (states.disabledId ? "User ID locked — click edit to change." : "")}
+                inputProps={{ "aria-label": "user id" }}
+              />
+
+              {page === "PASSWORD" && (
+                <>
+                  <StyledTextField
+                    label="Password"
+                    type={showPassword ? "text" : "password"}
+                    value={password}
+                    onChange={(e) => set({ password: e.target.value })}
+                    margin="normal"
+                    fullWidth
+                    inputProps={{ "aria-label": "password" }}
+                    InputProps={{
+                      endAdornment: (
+                        <InputAdornment position="end">
+                          <IconButton
+                            edge="end"
+                            aria-label={showPassword ? "Hide password" : "Show password"}
+                            onClick={toggleShowPassword}
+                            onMouseDown={(e) => e.preventDefault()}
+                            size="large"
+                          >
+                            {showPassword ? <VisibilityOff /> : <Visibility />}
+                          </IconButton>
+                        </InputAdornment>
+                      ),
+                    }}
+                  />
+
+                  <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
+                    <PrimaryButton
+                      type="button"
+                      variant="contained"
+                      onClick={handleEditId}
+                      sx={{
+                        flex: "0 0 30%",
+                        backgroundColor: "#EEE",
+                        color: "#222",
+                        "&:hover": { backgroundColor: "#E0E0E0" },
+                      }}
+                    >
+                      Edit ID
+                    </PrimaryButton>
+
+                    <PrimaryButton type="submit" variant="contained" sx={{ flex: "1 1 auto" }} disabled={loading}>
+                      {loading ? "Signing in…" : "SIGN IN"}
+                    </PrimaryButton>
+                  </div>
+                </>
+              )}
+
+              {page === "HOME" && (
+                <PrimaryButton type="submit" variant="contained" disabled={loading} sx={{ marginTop: 2 }}>
+                  {loading ? "Checking…" : "Proceed"}
+                </PrimaryButton>
+              )}
+
+              {page === "UPDATE" && (
+                <>
+                  <SubText sx={{ marginTop: 2 }}>
+                    Your account requires a password update. Please continue to set a new password.
+                  </SubText>
+                  <PrimaryButton type="button" onClick={() => {}} sx={{ marginTop: 2 }}>
+                    Continue
+                  </PrimaryButton>
+                </>
+              )}
+            </form>
+          </GlassCard>
+        </RightCol>
+      </Content>
+
+      <LoginErrorDialog
+        showErrorDialog={dialog.open}
+        onDialogClose={closeDialog}
+        title={dialog.title}
+        content={dialog.message}
+      />
+    </Root>
+  );
+}
