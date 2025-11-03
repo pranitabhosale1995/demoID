@@ -1,0 +1,39 @@
+{
+  "brand": {
+    "title": "FinCore",
+    "subtitle": "Empowering Data"
+  },
+  "hero": {
+    "welcomeTitle": "Welcome to FinCore Reporting Portal",
+    "subText": "Seamlessly access and generate critical financial reports with FinCore-SBI's centralized platform for secure, high integrity financial data access."
+  },
+  "legal": {
+    "title": "Legal Warning",
+    "items": [
+      "This application is for the use of authorized users only.",
+      "All activities on this application may be recorded and monitored.",
+      "Individuals using this application without authority or in excess of their authority may be subject to disciplinary or legal action."
+    ]
+  },
+  "form": {
+    "signIn": "SIGN IN",
+    "checking": "Checking...",
+    "userIdPlaceholder": "Enter your User ID",
+    "passwordPlaceholder": "Enter your password",
+    "enterPasswordTitle": "Enter Password",
+    "signInButton": "Sign In",
+    "invalidPasswordTemplate": "Invalid password. You have {attemptsLeft} attempts left.",
+    "accountLockedTitle": "Account Locked",
+    "accountLockedMessage": "You are out of attempts and your account has been locked.",
+    "loginFailedTitle": "Login Failed",
+    "loginFailedMessage": "Failed to log into FinCore, please try again later"
+  },
+  "defaults": {
+    "fallbackRoute": "/dashboard"
+  },
+  "features": [
+    "End-to-end 256-bit SSL encryption",
+    "Role-based Multi-factor access control",
+    "Real-time tracking and auditing"
+  ]
+}
