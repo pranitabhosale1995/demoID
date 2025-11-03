@@ -1,0 +1,14 @@
+"form": {
+  "updatePasswordTitle": "Update Password",
+  "newPasswordLabel": "New Password",
+  "confirmPasswordLabel": "Confirm Password",
+  "passwordRequired": "Both password fields are required.",
+  "passwordMinLength": "Password must be at least 8 characters long.",
+  "passwordMismatch": "Passwords do not match.",
+  "updateButton": "Update Password",
+  "updatingLabel": "Updating...",
+  "updateSuccessTitle": "Password Updated",
+  "updateSuccessMessage": "Password updated successfully. Please use the new password to sign in.",
+  "updateFailedTitle": "Update Failed",
+  "updateFailedMessage": "Failed to update password, please try again."
+}
