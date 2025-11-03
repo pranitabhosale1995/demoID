@@ -1,0 +1,265 @@
+import React, { useEffect, useState } from "react";
+import axios from "axios";
+import { Box, Container, InputAdornment } from "@mui/material";
+import PersonIcon from "@mui/icons-material/Person";
+
+import LogoImg from "../../../assets/Logos/fincore_transparent.svg";
+import LoginErrorDialog from "./LoginErrorDialog";
+import LoginWithPassword from "./LoginWithPassword";
+import UpdatePassword from "./UpdatePassword";
+
+import {
+  Root,
+  ContainerInner,
+  Content,
+  LeftCol,
+  RightCol,
+  LogoWrap,
+  BrandTitle,
+  BrandSub,
+  BigHeading,
+  SubText,
+  FeatureList,
+  FeatureItem,
+  Bullet,
+  GlassCard,
+  FormTitle,
+  StyledTextField,
+  PrimaryButton,
+} from "./LoginStyles";
+
+export default function LoginPort() {
+  // === JSON UI DATA ===
+  const [content, setContent] = useState(null);
+
+  useEffect(() => {
+    const loadContent = async () => {
+      try {
+        const res = await axios.get("/content/loginContent.json");
+        setContent(res.data);
+      } catch (err) {
+        console.error("Failed to load content JSON:", err);
+      }
+    };
+    loadContent();
+  }, []);
+
+  // === STATES ===
+  const [userId, setUserId] = useState("");
+  const [error, setError] = useState("");
+  const [page, setPage] = useState("HOME"); // HOME | PASSWORD | UPDATE
+  const [dialogHeading, setDialogHeading] = useState("");
+  const [dialogContent, setDialogContent] = useState("");
+  const [showErrorDialog, setShowErrorDialog] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [userIdDisabled, setUserIdDisabled] = useState(false);
+
+  // === DIALOG HANDLERS ===
+  const handleDialogClose = () => {
+    setShowErrorDialog(false);
+    setDialogHeading("");
+    setDialogContent("");
+  };
+
+  const openLoginErrorDialog = (heading, content) => {
+    setDialogHeading(heading);
+    setDialogContent(content);
+    setShowErrorDialog(true);
+  };
+
+  // === VALIDATION ===
+  const validateId = (id) => {
+    if (!id) return false;
+    const v = id.trim().toLowerCase();
+    const regex = /^(?:\d{7}|v\d{7}|tcs\d{7}|tcsv\d{7})$/;
+    return regex.test(v);
+  };
+
+  // === INPUT RESTRICTIONS ===
+  const handleUserIdChange = (raw) => {
+    if (userIdDisabled) return;
+    let val = (raw || "").replace(/\s+/g, "");
+    const m = val.match(/^([A-Za-z]*)(.*)$/);
+    let prefixCandidate = (m && m[1]) || "";
+    let rest = (m && m[2]) || "";
+
+    const prefixLow = prefixCandidate.toLowerCase();
+    const allowedPrefixList = ["", "t", "tc", "tcs", "tcsv", "v"];
+    if (!allowedPrefixList.some((p) => prefixLow.startsWith(p))) {
+      prefixCandidate = "";
+    }
+
+    const prefix = prefixCandidate;
+    let digitsPart = rest.replace(/\D/g, "");
+    if (digitsPart.length > 7) digitsPart = digitsPart.slice(0, 7);
+
+    const newVal = prefix + digitsPart;
+    setUserId(newVal);
+    if (error) setError("");
+  };
+
+  const handleUserIdPaste = (e) => {
+    e.preventDefault();
+    const paste = (e.clipboardData || window.clipboardData).getData("text");
+    handleUserIdChange(paste);
+  };
+
+  // === API CALL: CHECK USER ===
+  const checkUser = async () => {
+    setError("");
+    if (!validateId(userId)) {
+      setError("Invalid User ID");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const payloadUserId = userId.trim();
+      const resp = await axios.post("/LS/auth/check-user", { userId: payloadUserId });
+      const result = resp?.data || {};
+
+      if (!result.userStatus || result.userStatus === "INVALID") {
+        setError("User ID does not exist");
+        return;
+      }
+
+      if (result.passwordLoginStatus === "INACTIVE") {
+        openLoginErrorDialog("Password Locked!", "You cannot login using password currently. Please try with SSO.");
+        return;
+      }
+
+      if (result.updatePassword === true) {
+        setPage("UPDATE");
+        setUserIdDisabled(true);
+        return;
+      }
+
+      if (result.userStatus === "ACTIVE" && result.passwordLoginStatus === "ACTIVE") {
+        setPage("PASSWORD");
+        setUserIdDisabled(true);
+        return;
+      }
+
+      openLoginErrorDialog("Login Not Allowed", result.message || "Please contact the administrator.");
+    } catch (err) {
+      console.error("❌ checkUser error:", err);
+      openLoginErrorDialog("Login Error", "Something went wrong, please try again later.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // === FORM SUBMIT ===
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (page === "HOME") checkUser();
+  };
+
+  // === CALLBACKS ===
+  const handlePasswordUpdateSuccess = () => {
+    setPage("PASSWORD");
+    setUserIdDisabled(true);
+  };
+
+  const enableEditingBackToHome = () => {
+    setPage("HOME");
+    setUserIdDisabled(false);
+    setError("");
+    setUserId("");
+  };
+
+  if (!content) return null;
+
+  return (
+    <Root>
+      <ContainerInner>
+        <Content>
+          {/* LEFT COLUMN */}
+          <LeftCol>
+            <LogoWrap>
+              <img src={LogoImg} alt="FinCore Logo" width={100} height="auto" />
+              <div>
+                <BrandTitle>{content.brand.title}</BrandTitle>
+                <BrandSub>{content.brand.subtitle}</BrandSub>
+              </div>
+            </LogoWrap>
+
+            <BigHeading>{content.hero.welcomeTitle}</BigHeading>
+            <SubText>{content.hero.subText}</SubText>
+
+            <BrandTitle>{content.legal.title}</BrandTitle>
+            <FeatureList>
+              {content.legal.items.map((item, idx) => (
+                <FeatureItem key={idx}>
+                  <Bullet /> {item}
+                </FeatureItem>
+              ))}
+            </FeatureList>
+          </LeftCol>
+
+          {/* RIGHT COLUMN */}
+          <RightCol>
+            <GlassCard elevation={3}>
+              <FormTitle>{content.form.signIn}</FormTitle>
+
+              <form onSubmit={handleSubmit} noValidate>
+                <StyledTextField
+                  fullWidth
+                  label="User ID"
+                  placeholder={content.form.userIdPlaceholder}
+                  margin="dense"
+                  value={userId}
+                  onChange={(e) => handleUserIdChange(e.target.value)}
+                  onPaste={handleUserIdPaste}
+                  error={Boolean(error)}
+                  helperText={error || " "}
+                  disabled={userIdDisabled}
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <PersonIcon />
+                      </InputAdornment>
+                    ),
+                  }}
+                />
+
+                {page === "HOME" && (
+                  <PrimaryButton type="submit" variant="contained" disabled={loading}>
+                    {loading ? content.form.checking : content.form.signIn}
+                  </PrimaryButton>
+                )}
+
+                {page === "PASSWORD" && (
+                  <Box>
+                    <LoginWithPassword
+                      userId={userId}
+                      openLoginErrorDialog={openLoginErrorDialog}
+                      onBackToHome={enableEditingBackToHome}
+                    />
+                  </Box>
+                )}
+
+                {page === "UPDATE" && (
+                  <Box>
+                    <UpdatePassword
+                      userId={userId}
+                      openLoginErrorDialog={openLoginErrorDialog}
+                      onUpdateSuccess={handlePasswordUpdateSuccess}
+                    />
+                  </Box>
+                )}
+              </form>
+            </GlassCard>
+          </RightCol>
+        </Content>
+      </ContainerInner>
+
+      <LoginErrorDialog
+        showErrorDialog={showErrorDialog}
+        title={dialogHeading}
+        content={dialogContent}
+        onDialogClose={handleDialogClose}
+      />
+    </Root>
+  );
+}
