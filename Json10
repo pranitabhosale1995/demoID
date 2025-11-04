@@ -1,0 +1,48 @@
+{
+  "brand": {
+    "title": "FinCore",
+    "subtitle": "Empowering Data"
+  },
+  "hero": {
+    "welcomeTitle": "Welcome to FinCore Reporting Portal",
+    "subText": "Seamlessly access and generate critical financial reports with FinCore-SBI's centralized platform for secure, high integrity financial data access."
+  },
+  "legal": {
+    "title": "Legal Warning",
+    "items": [
+      "This application is for the use of authorized users only.",
+      "All activities on this application may be recorded and monitored.",
+      "Individuals using this application without authority or in excess of their authority are subject to disciplinary action and/or criminal prosecution."
+    ]
+  },
+  "form": {
+    "signIn": "SIGN IN",
+    "checking": "Checking...",
+    "userIdPlaceholder": "Enter your User ID",
+    "signInButton": "Sign In",
+    "enterPasswordTitle": "Enter password",
+    "loginWithPassword": {
+      "title": "Enter Password",
+      "passwordLabel": "Password",
+      "passwordPlaceholder": "Enter your password",
+      "signInButton": "Sign In",
+      "checkingLabel": "Checking..."
+    },
+    "updatePassword": {
+      "title": "Update Password",
+      "newPasswordLabel": "New Password",
+      "newPasswordPlaceholder": "Enter new password",
+      "confirmPasswordLabel": "Confirm Password",
+      "confirmPasswordPlaceholder": "Re-enter your password",
+      "updateButton": "Update Password",
+      "requirementsTitle": "Password must meet the following criteria:",
+      "requirements": [
+        { "key": "length", "text": "Between 8 and 16 characters long" },
+        { "key": "uppercase", "text": "Include at least one uppercase letter" },
+        { "key": "lowercase", "text": "Include at least one lowercase letter" },
+        { "key": "number", "text": "Include at least one number" },
+        { "key": "specialChar", "text": "Include at least one special character" }
+      ]
+    }
+  }
+}
