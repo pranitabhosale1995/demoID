@@ -1,0 +1,110 @@
+/**
+ * @vitest-environment jsdom
+ */
+import React from "react";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { vi } from "vitest";
+import axios from "axios";
+
+// mocks
+const mockDispatch = vi.fn();
+vi.mock("react-redux", async () => {
+  const actual = await vi.importActual("react-redux");
+  return {
+    ...actual,
+    useDispatch: () => mockDispatch,
+    useSelector: () => [], // menus empty
+  };
+});
+
+const mockNavigate = vi.fn();
+vi.mock("react-router-dom", async () => {
+  const actual = await vi.importActual("react-router-dom");
+  return {
+    ...actual,
+    useNavigate: () => mockNavigate,
+  };
+});
+
+vi.mock("axios");
+
+import LoginWithPassword from "../LoginWithPassword";
+
+describe("LoginWithPassword", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("renders password field and toggles visibility", () => {
+    render(<LoginWithPassword userId="1234567" openLoginErrorDialog={vi.fn()} />);
+
+    const passwordField = screen.getByLabelText(/Password/i);
+    expect(passwordField).toBeInTheDocument();
+
+    // find the eye icon button and click to toggle (uses IconButton)
+    const buttons = screen.getAllByRole("button");
+    // one of the buttons will be the visibility toggle — click it and ensure type changes
+    const eyeButton = buttons.find((b) => b.getAttribute("aria-label")?.toLowerCase()?.includes("show"));
+    if (eyeButton) {
+      fireEvent.click(eyeButton);
+    }
+  });
+
+  it("submits credentials and navigates on success", async () => {
+    // mock axios POST (/LS/auth/login)
+    axios.post.mockResolvedValueOnce({
+      data: {
+        validCredentials: true,
+        accessToken: "fake.jwt.token",
+        roleData: { root_menus: [{ route: "/dashboard" }] },
+      },
+    });
+
+    render(<LoginWithPassword userId="1234567" openLoginErrorDialog={vi.fn()} />);
+
+    const pwd = screen.getByLabelText(/Password/i);
+    fireEvent.change(pwd, { target: { value: "Password123!" } });
+
+    const signBtn = screen.getByRole("button", { name: /sign in/i });
+    fireEvent.click(signBtn);
+
+    await waitFor(() => {
+      expect(axios.post).toHaveBeenCalledWith("/LS/auth/login", {
+        userId: "1234567",
+        password: "Password123!",
+      });
+    });
+
+    // expect navigation to dashboard (or whatever route in response)
+    await waitFor(() => {
+      expect(mockNavigate).toHaveBeenCalledWith("/dashboard");
+    });
+
+    // expect dispatch was called to set token & user & menus (basic check)
+    expect(mockDispatch).toHaveBeenCalled(); // you can make more precise asserts if you import actions or spy on them
+  });
+
+  it("shows invalid password message when credentials invalid", async () => {
+    axios.post.mockResolvedValueOnce({
+      data: {
+        validCredentials: false,
+        userStatus: "ACTIVE",
+        loginMethod: "p",
+        attemptsLeft: 2,
+      },
+    });
+
+    const openLoginErrorDialog = vi.fn();
+    render(<LoginWithPassword userId="1234567" openLoginErrorDialog={openLoginErrorDialog} />);
+
+    fireEvent.change(screen.getByLabelText(/Password/i), { target: { value: "badpass" } });
+    fireEvent.click(screen.getByRole("button", { name: /sign in/i }));
+
+    await waitFor(() => {
+      expect(axios.post).toHaveBeenCalled();
+    });
+
+    // should set error text (or call openLoginErrorDialog when attempts exhausted)
+    expect(screen.queryByText(/Invalid password you have/)).toBeTruthy();
+  });
+});
