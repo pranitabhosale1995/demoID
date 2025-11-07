@@ -1,0 +1,61 @@
+// src/theme.js
+import { createTheme } from "@mui/material/styles";
+
+const theme = createTheme({
+  components: {
+    // Global CSS overrides via CssBaseline so DataGrid rows are targeted globally
+    MuiCssBaseline: {
+      styleOverrides: {
+        // ensure DataGrid container allows visible shadows
+        ".MuiDataGrid-root": {
+          overflow: "visible",
+        },
+
+        // base row style for datagrid rows
+        ".MuiDataGrid-row": {
+          transition: "transform 180ms ease, box-shadow 180ms ease",
+          willChange: "transform, box-shadow",
+          // pointer indicates row is interactive (optional)
+          cursor: "pointer",
+        },
+
+        // hover effect applied ONLY to DataGrid rows
+        ".MuiDataGrid-row:hover": {
+          transform: "translateY(-6px)",                         // lift up slightly
+          boxShadow: "0px 10px 20px rgba(16,24,40,0.08)",       // soft elevation
+          zIndex: 2,                                           // place on top visually
+          backgroundColor: "inherit",                          // keep background consistent
+        },
+
+        // ensure virtualization reuse doesn't cause multiple rows to lift visually:
+        ".MuiDataGrid-virtualScrollerRenderZone": {
+          // keep stacking context sane
+          position: "relative",
+        },
+
+        // Respect reduced-motion preference
+        "@media (prefers-reduced-motion: reduce)": {
+          ".MuiDataGrid-row, .MuiDataGrid-row:hover": {
+            transform: "none !important",
+            transition: "none !important",
+            boxShadow: "none !important",
+            cursor: "default",
+          },
+        },
+      },
+    },
+
+    // optional: allow DataGrid container to show shadows (in case wrapper had overflow hidden)
+    MuiPaper: {
+      styleOverrides: {
+        root: {
+          // if you wrap grids in Paper, keep overflow visible where appropriate
+          // (be careful: this affects all Paper components; remove if undesired)
+          // overflow: "visible",
+        },
+      },
+    },
+  },
+});
+
+export default theme;
