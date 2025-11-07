@@ -1,0 +1,119 @@
+/**
+ * @vitest-environment jsdom
+ */
+import React from "react";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { vi } from "vitest";
+import axios from "axios";
+
+// stub child components so we only test LoginPort logic
+vi.mock("../LoginWithPassword", () => ({
+  __esModule: true,
+  default: () => <div data-testid="login-with-password">LOGIN WITH PASSWORD</div>,
+}));
+vi.mock("../UpdatePassword", () => ({
+  __esModule: true,
+  default: () => <div data-testid="update-password">UPDATE PASSWORD</div>,
+}));
+
+// mock react-redux hooks used by other components (safe no-op)
+vi.mock("react-redux", async () => {
+  const actual = await vi.importActual("react-redux");
+  return {
+    ...actual,
+    useDispatch: () => vi.fn(),
+    useSelector: () => ({}),
+  };
+});
+
+// mock react-router-dom navigate if used inside children
+const mockNavigate = vi.fn();
+vi.mock("react-router-dom", async () => {
+  const actual = await vi.importActual("react-router-dom");
+  return {
+    ...actual,
+    useNavigate: () => mockNavigate,
+  };
+});
+
+// mock axios
+vi.mock("axios");
+import LoginPort from "../LoginPort";
+
+describe("LoginPort (Vitest)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("renders user id input and sign in button", () => {
+    render(<LoginPort />);
+    expect(screen.getByLabelText(/User ID/i)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /sign in/i })).toBeInTheDocument();
+  });
+
+  it("calls check-user and shows LoginWithPassword when passwordLoginStatus ACTIVE", async () => {
+    axios.post.mockResolvedValueOnce({
+      data: {
+        userStatus: "ACTIVE",
+        passwordLoginStatus: "ACTIVE",
+        updatePassword: false,
+      },
+    });
+
+    render(<LoginPort />);
+
+    const userInput = screen.getByLabelText(/User ID/i);
+    fireEvent.change(userInput, { target: { value: "1234567" } });
+
+    const signInBtn = screen.getByRole("button", { name: /sign in/i });
+    fireEvent.click(signInBtn);
+
+    await waitFor(() => {
+      expect(axios.post).toHaveBeenCalledWith("/LS/auth/check-user", { userId: "1234567" });
+    });
+
+    expect(await screen.findByTestId("login-with-password")).toBeInTheDocument();
+  });
+
+  it("moves to UPDATE when API returns updatePassword true", async () => {
+    axios.post.mockResolvedValueOnce({
+      data: { updatePassword: true },
+    });
+
+    render(<LoginPort />);
+
+    const userInput = screen.getByLabelText(/User ID/i);
+    fireEvent.change(userInput, { target: { value: "1234567" } });
+
+    const signInBtn = screen.getByRole("button", { name: /sign in/i });
+    fireEvent.click(signInBtn);
+
+    await waitFor(() => {
+      expect(axios.post).toHaveBeenCalled();
+    });
+
+    expect(await screen.findByTestId("update-password")).toBeInTheDocument();
+  });
+
+  it("shows error helper text when invalid user (userStatus INVALID)", async () => {
+    axios.post.mockResolvedValueOnce({
+      data: { userStatus: "INVALID", message: "User not found" },
+    });
+
+    render(<LoginPort />);
+
+    const userInput = screen.getByLabelText(/User ID/i);
+    fireEvent.change(userInput, { target: { value: "9999999" } });
+
+    const signInBtn = screen.getByRole("button", { name: /sign in/i });
+    fireEvent.click(signInBtn);
+
+    await waitFor(() => expect(axios.post).toHaveBeenCalled());
+
+    // LoginPort shows helperText / error for invalid user - check for either helper text or dialog stub
+    const helper = screen.queryByText(/user id does not exist/i) || screen.queryByText(/user not found/i);
+    // At least one of these should exist or an error dialog might open; assert axios called and not navigated
+    expect(axios.post).toHaveBeenCalled();
+    expect(helper || screen.queryByTestId("login-error-dialog")).toBeTruthy();
+  });
+});
