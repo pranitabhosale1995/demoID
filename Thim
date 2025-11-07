@@ -1,0 +1,65 @@
+// src/theme.js
+import { createTheme } from "@mui/material/styles";
+
+const theme = createTheme({
+  components: {
+    MuiTableRow: {
+      styleOverrides: {
+        root: ({ theme }) => ({
+          // Smooth transition for transform and box-shadow using theme timing
+          transition: `${theme.transitions.create(["transform", "box-shadow"], {
+            duration: theme.transitions.duration.shorter,
+          })}`,
+
+          // Hint browser to optimize transform (better performance)
+          willChange: "transform, box-shadow",
+
+          // Keep pointer cursor to suggest interactivity (optional)
+          cursor: "pointer",
+
+          // Default background (keeps existing look)
+          backgroundColor: theme.palette.background.paper,
+
+          // Hover styles
+          "&:hover": {
+            transform: "translateY(-4px)", // row "lifts" up
+            boxShadow: `0px 8px 20px rgba(16,24,40,0.08)`, // soft elevation
+            zIndex: 1, // ensure it visually overlaps neighbors
+            // slightly change background to indicate hover (subtle)
+            backgroundColor: theme.palette.action.hover,
+          },
+
+          // Avoid layout shift for table: use transform instead of margin/padding changes
+          // and ensure table cells keep their layout:
+          "& td, & th": {
+            // keep cells from creating extra overflow
+            // no width change here — only visual transform
+            transition: `${theme.transitions.create(["opacity"], {
+              duration: theme.transitions.duration.shorter,
+            })}`,
+          },
+
+          // Respect users who prefer reduced motion
+          "@media (prefers-reduced-motion: reduce)": {
+            transform: "none !important",
+            transition: "none !important",
+            boxShadow: "none !important",
+            cursor: "default",
+          },
+        }),
+      },
+    },
+
+    // Optional: table container/card shadow on hover — keeps visual consistency
+    MuiTableContainer: {
+      styleOverrides: {
+        root: ({ theme }) => ({
+          borderRadius: theme.shape.borderRadius,
+          overflow: "visible", // allow row shadow to be visible outside container
+        }),
+      },
+    },
+  },
+});
+
+export default theme;
