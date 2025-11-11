@@ -1,0 +1,46 @@
+// src/setupTests.js
+import "@testing-library/jest-dom";
+import { vi } from "vitest";
+import axios from "axios";
+
+// --- Mock browser-specific features for JSDOM ---
+if (!window.matchMedia) {
+  window.matchMedia = () => ({
+    matches: false,
+    addListener: () => {},
+    removeListener: () => {},
+  });
+}
+
+// --- Mock axios globally ---
+vi.mock("axios");
+
+beforeEach(() => {
+  axios.get.mockImplementation((url) => {
+    if (url === "/loginContent.json") {
+      return Promise.resolve({
+        data: {
+          brand: { title: "Test Brand", subtitle: "Sub" },
+          hero: { welcomeTitle: "Welcome", subText: "Hello" },
+          form: { signIn: "Sign In", userIdPlaceholder: "Enter ID" },
+          legal: { items: [] },
+        },
+      });
+    }
+    return Promise.resolve({ data: {} });
+  });
+
+  axios.post.mockImplementation(() =>
+    Promise.resolve({
+      data: {
+        userStatus: "ACTIVE",
+        passwordLoginStatus: "ACTIVE",
+        updatePassword: false,
+      },
+    })
+  );
+});
+
+afterEach(() => {
+  vi.clearAllMocks();
+});
