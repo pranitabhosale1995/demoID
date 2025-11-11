@@ -9,3 +9,24 @@ if exist ".vitest" echo dot_vitest_exists
 if exist "%TEMP%\vitest" rd /s /q "%TEMP%\vitest"
 if exist "%TEMP%\vite" rd /s /q "%TEMP%\vite"
 if exist ".vitest" rd /s /q ".vitest"
+
+
+import { defineConfig } from "vitest/config";
+
+export default defineConfig({
+  test: {
+    environment: "jsdom",
+    setupFiles: "./src/setupTests.js",
+    threads: false,   // ✅ disable workers
+    isolate: false,   // ✅ run in same process
+    watch: false,     // ✅ no hot reload
+    silent: false,
+    reporters: "verbose",
+    timeout: 30000,   // 30 seconds max
+  },
+});
+
+
+
+
+npx vitest --config ./vitest.config.mjs --run --reporter=verbose
