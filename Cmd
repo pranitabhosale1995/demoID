@@ -1,0 +1,11 @@
+echo %TEMP%
+if exist "%TEMP%\vitest" echo vitest_exists
+if exist "%TEMP%\vite" echo vite_exists
+if exist ".vitest" echo dot_vitest_exists
+
+
+
+
+if exist "%TEMP%\vitest" rd /s /q "%TEMP%\vitest"
+if exist "%TEMP%\vite" rd /s /q "%TEMP%\vite"
+if exist ".vitest" rd /s /q ".vitest"
