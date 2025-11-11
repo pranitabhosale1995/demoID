@@ -1,0 +1,53 @@
+// src/setupTests.js
+
+import "@testing-library/jest-dom";
+import { vi } from "vitest";
+import axios from "axios";
+
+// --- Mock for window.matchMedia (required by MUI, jsdom doesn't have it) ---
+if (!window.matchMedia) {
+  window.matchMedia = () => ({
+    matches: false,
+    addListener: () => {},
+    removeListener: () => {},
+  });
+}
+
+// --- Global mock for axios ---
+vi.mock("axios");
+
+// Default axios mock setup before each test
+beforeEach(() => {
+  // Default GET handler (used for /loginContent.json etc.)
+  axios.get.mockImplementation((url) => {
+    if (url === "/loginContent.json") {
+      return Promise.resolve({
+        data: {
+          brand: { title: "Test Brand", subtitle: "Sub" },
+          hero: { welcomeTitle: "Welcome", subText: "Hello" },
+          form: { signIn: "Sign in", userIdPlaceholder: "Enter ID" },
+          legal: { items: [] },
+        },
+      });
+    }
+    return Promise.resolve({ data: {} });
+  });
+
+  // Default POST handler
+  axios.post.mockImplementation((url, payload) => {
+    // default fallback — tests can override this
+    return Promise.resolve({
+      data: {
+        userStatus: null,
+        passwordLoginStatus: null,
+        updatePassword: false,
+        message: "Default mock response",
+      },
+    });
+  });
+});
+
+// Clear mocks after each test
+afterEach(() => {
+  vi.clearAllMocks();
+});
