@@ -1,0 +1,138 @@
+// src/features/auth/components/__tests__/LoginPort.test.jsx
+import React from "react";
+import { vi, describe, it, expect, beforeEach } from "vitest";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import axios from "axios";
+import LoginPort from "../LoginPort"; // __tests__ पासून एक पाऊल वर
+
+// ----------------- मॉक्स -----------------
+vi.mock("axios");
+
+// Mock child components that LoginPort imports
+vi.mock("../UpdatePassword", () => ({
+  __esModule: true,
+  default: () => <div data-testid="mock-update">Mock UpdatePassword</div>,
+}));
+
+vi.mock("../LoginWithPassword", () => ({
+  __esModule: true,
+  default: ({ userId, openLoginErrorDialog, onBackToHome }) => (
+    <div data-testid="mock-password">
+      Mock LoginWithPassword for {userId}
+      <button onClick={() => openLoginErrorDialog("errTitle", "errContent")}>openErr</button>
+      <button onClick={onBackToHome}>back</button>
+    </div>
+  ),
+}));
+
+vi.mock("../LoginErrorDialog", () => ({
+  __esModule: true,
+  default: ({ showErrorDialog, title, content, onDialogClose }) =>
+    showErrorDialog ? (
+      <div data-testid="mock-error-dialog">
+        <div>{title}</div>
+        <div>{content}</div>
+        <button onClick={onDialogClose}>close</button>
+      </div>
+    ) : null,
+}));
+
+// ----------------- lifecycle -----------------
+beforeEach(() => {
+  vi.clearAllMocks();
+});
+
+// ----------------- Helper: default content used by many tests -----------------
+const defaultContent = {
+  brand: { title: "Test Brand", subtitle: "Sub" },
+  hero: { welcomeTitle: "Welcome", subText: "Hello" },
+  form: { signIn: "Sign in", userIdPlaceholder: "Enter id" },
+  legal: { items: ["Term 1", "Term 2"] },
+};
+
+// ----------------- टेस्टकेसेस -----------------
+describe("LoginPort component", () => {
+  it("loads content via axios.get on mount and renders content", async () => {
+    // mock BEFORE render
+    axios.get.mockResolvedValueOnce({ data: defaultContent });
+
+    render(<LoginPort />);
+
+    // wait for axios.get to be called and for content to appear
+    await waitFor(() => expect(axios.get).toHaveBeenCalledWith("/loginContent.json"));
+
+    // check some pieces of rendered content
+    expect(screen.getByText(/Test Brand/i)).toBeTruthy();
+    expect(screen.getByText(/Welcome/i)).toBeTruthy();
+    expect(screen.getByText(/Sign in/i)).toBeTruthy();
+  });
+
+  it("valid ACTIVE user -> shows LoginWithPassword (PASSWORD page)", async () => {
+    // initial content load
+    axios.get.mockResolvedValueOnce({ data: defaultContent });
+
+    // when user submits, API returns ACTIVE user
+    axios.post.mockResolvedValueOnce({
+      data: { userStatus: "ACTIVE", passwordLoginStatus: "ACTIVE", updatePassword: false },
+    });
+
+    render(<LoginPort />);
+
+    await waitFor(() => expect(axios.get).toHaveBeenCalled());
+
+    // find input by placeholder or label
+    const input =
+      screen.queryByLabelText(/User ID/i) || screen.getByPlaceholderText(/Enter id/i);
+    fireEvent.change(input, { target: { value: "t1234567" } });
+
+    const button = screen.getByRole("button", { name: /Sign in|sign in|submit/i });
+    fireEvent.click(button);
+
+    // axios.post should be called and mocked LoginWithPassword shown
+    await waitFor(() => expect(axios.post).toHaveBeenCalled());
+    expect(screen.getByTestId("mock-password")).toBeInTheDocument();
+  });
+
+  it("API returns updatePassword === true -> shows UpdatePassword (UPDATE page)", async () => {
+    axios.get.mockResolvedValueOnce({ data: defaultContent });
+    axios.post.mockResolvedValueOnce({
+      data: { userStatus: "ACTIVE", passwordLoginStatus: "INACTIVE", updatePassword: true },
+    });
+
+    render(<LoginPort />);
+    await waitFor(() => expect(axios.get).toHaveBeenCalled());
+
+    const input =
+      screen.queryByLabelText(/User ID/i) || screen.getByPlaceholderText(/Enter id/i);
+    fireEvent.change(input, { target: { value: "t1234567" } });
+
+    const button = screen.getByRole("button", { name: /Sign in|sign in|submit/i });
+    fireEvent.click(button);
+
+    await waitFor(() => expect(axios.post).toHaveBeenCalled());
+    expect(screen.getByTestId("mock-update")).toBeInTheDocument();
+  });
+
+  it("invalid user -> shows LoginErrorDialog with message", async () => {
+    axios.get.mockResolvedValueOnce({ data: defaultContent });
+    axios.post.mockResolvedValueOnce({
+      data: { userStatus: null, passwordLoginStatus: null, updatePassword: false, message: "User ID does not exist" },
+    });
+
+    render(<LoginPort />);
+    await waitFor(() => expect(axios.get).toHaveBeenCalled());
+
+    const input =
+      screen.queryByLabelText(/User ID/i) || screen.getByPlaceholderText(/Enter id/i);
+    fireEvent.change(input, { target: { value: "unknown" } });
+
+    const button = screen.getByRole("button", { name: /Sign in|sign in|submit/i });
+    fireEvent.click(button);
+
+    await waitFor(() => expect(axios.post).toHaveBeenCalled());
+
+    // error dialog should appear
+    expect(screen.getByTestId("mock-error-dialog")).toBeInTheDocument();
+    expect(screen.getByText(/User ID does not exist|Login Not Allowed|please contact/i)).toBeTruthy();
+  });
+});
