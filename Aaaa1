@@ -1,0 +1,10 @@
+// src/features/auth/components/__test__/smoke.test.jsx
+import React from "react";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { test, expect } from "vitest";
+
+test("smoke", () => {
+  render(<div data-testid="ok">ok</div>);
+  const el = screen.getByTestId("ok");
+  expect(el).toBeInTheDocument();
+});
