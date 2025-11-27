@@ -1,0 +1,55 @@
+// vitest.config.js
+import path from "path";
+import { fileURLToPath } from "url";
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+export default defineConfig({
+  plugins: [react()],
+  resolve: {
+    alias: {
+      // explicit aliases can help some bundlers resolve to exact node_modules path
+      "@mui/material": path.resolve(__dirname, "node_modules/@mui/material"),
+      "@mui/icons-material": path.resolve(__dirname, "node_modules/@mui/icons-material"),
+    },
+  },
+
+  optimizeDeps: {
+    include: [
+      "@mui/material",
+      "@mui/icons-material",
+      "@emotion/react",
+      "@emotion/styled"
+    ],
+  },
+
+  ssr: {
+    // don't externalize these when SSR/build for tests
+    noExternal: [
+      "@mui/material",
+      "@mui/icons-material",
+      "@emotion/react",
+      "@emotion/styled"
+    ],
+  },
+
+  test: {
+    globals: true,
+    environment: "jsdom",
+    setupFiles: [`${process.cwd()}/src/setupTests.js`], // जर setup file असले तर ठेवा, नसेल तर काढून टाका
+    deps: {
+      // vitest-specific: inline these deps so they are transformed for tests
+      inline: [
+        "@mui/material",
+        "@mui/icons-material",
+        "@emotion/react",
+        "@emotion/styled"
+      ],
+      // optional but sometimes helpful
+      interopDefault: true
+    },
+  },
+});
