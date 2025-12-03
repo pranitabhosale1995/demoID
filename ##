@@ -1,0 +1,43 @@
+// src/components/GlobalBackground.jsx
+import React, { useContext } from "react";
+import { Box } from "@mui/material"; // जर Material नसेल तर <div> वापरा
+import { ThemeContext } from "../context/ThemeProvider";
+
+// Images — path adjust कर जर तुम्ही वेगळे नाव वापरले असेल
+import lightBg from "../assets/bg-light.png";
+import darkBg from "../assets/bg-dark.png";
+import mintBg from "../assets/bg-mint.png";
+
+const GlobalBackground = () => {
+  const { theme } = useContext(ThemeContext);
+
+  const bg = theme === "dark" ? darkBg : theme === "mint" ? mintBg : lightBg;
+
+  const filter =
+    theme === "dark"
+      ? "brightness(0.75) contrast(1.05)"
+      : theme === "mint"
+      ? "brightness(0.98) saturate(1.05)"
+      : "none";
+
+  return (
+    <Box
+      id="global-bg"
+      sx={{
+        position: "fixed",
+        inset: 0,
+        zIndex: -1,
+        backgroundImage: `url(${bg})`,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        backgroundRepeat: "no-repeat",
+        width: "100vw",
+        height: "100vh",
+        transition: "background-image 0.45s ease, filter 0.45s ease",
+        filter
+      }}
+    />
+  );
+};
+
+export default GlobalBackground;
