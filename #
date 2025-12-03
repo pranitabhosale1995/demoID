@@ -1,0 +1,29 @@
+// src/context/ThemeProvider.jsx
+import React, { createContext, useState, useEffect } from "react";
+
+export const ThemeContext = createContext({
+  theme: "light",
+  setTheme: () => {}
+});
+
+export const ThemeProviderCustom = ({ children }) => {
+  const [theme, setTheme] = useState("light");
+
+  useEffect(() => {
+    const saved = localStorage.getItem("app-theme");
+    if (saved === "light" || saved === "dark" || saved === "mint") {
+      setTheme(saved);
+    }
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem("app-theme", theme);
+    document.documentElement.setAttribute("data-app-theme", theme);
+  }, [theme]);
+
+  return (
+    <ThemeContext.Provider value={{ theme, setTheme }}>
+      {children}
+    </ThemeContext.Provider>
+  );
+};
