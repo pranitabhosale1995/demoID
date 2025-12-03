@@ -1,0 +1,21 @@
+// src/components/ThemeSwitcher.jsx
+import React, { useContext } from "react";
+import { Button, Box } from "@mui/material";
+import { ThemeContext } from "../theme/AppTheme";
+
+const ThemeSwitcher = () => {
+  const { currentTheme, changeTheme } = useContext(ThemeContext);
+
+  const order = ["light", "dark", "mint"];
+  const nextTheme = order[(order.indexOf(currentTheme) + 1) % order.length];
+
+  return (
+    <Box sx={{ position: "fixed", top: 20, right: 20, zIndex: 2000 }}>
+      <Button variant="contained" onClick={() => changeTheme(nextTheme)}>
+        {nextTheme} Theme
+      </Button>
+    </Box>
+  );
+};
+
+export default ThemeSwitcher;
