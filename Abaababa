@@ -1,0 +1,68 @@
+dark: {
+  palette: {
+    mode: "dark",
+
+    primary: {
+      light: "#4C5A70",   // light bluish tone from image
+      main: "#394554",    // main dark blue-grey
+      dark: "#1F2733",    // the deepest shade from image
+      contrastText: "#fff",
+    },
+
+    secondary: {
+      light: "#7C869A",   // soft grey-blue
+      main: "#667286",
+      dark: "#4B5566",
+      contrastText: "#fff",
+    },
+
+    success: {
+      light: "#5BAF9D",
+      main: "#3F8F7C",
+      dark: "#2C6B5C",
+      contrastText: "#fff",
+    },
+
+    warning: {
+      light: "#D9A553",
+      main: "#C48C3C",
+      dark: "#8B6229",
+      contrastText: "#fff",
+    },
+
+    error: {
+      light: "#D86A6A",
+      main: "#C44F4F",
+      dark: "#8A3636",
+      contrastText: "#fff",
+    },
+
+    info: {
+      light: "#8194AC",
+      main: "#6D7A90",   // this color EXACTLY matches your wallpaper highlight
+      dark: "#505B6B",
+      contrastText: "#fff",
+    },
+
+    grey: {
+      50:  "#f8f9fa",
+      100: "#e9ecef",
+      200: "#dee2e6",
+      300: "#ced4da",
+      400: "#adb5bd",
+      500: "#6c757d",
+      600: "#495057",
+      700: "#343a40",
+      800: "#1f2733",  // from your image
+      900: "#161b22"
+    },
+
+    background: {
+      default: "#1F2733",     // main background from image
+      paper:   "#2A323F",     // layered lighter shade
+      glass:   "rgba(31, 39, 51, 0.5)", // transparent effect
+    },
+
+    divider: "rgba(108, 117, 125, 0.2)",
+  },
+},
