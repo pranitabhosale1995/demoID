@@ -1,0 +1,55 @@
+// src/App.jsx
+import React, { useEffect } from "react";
+import { StyledEngineProvider, CssBaseline, Box } from "@mui/material";
+
+// ====== तुमच्या आधीच्या theme files (screenshots नुसार path वापरले) ======
+import GlobalBackground from "./theme/GlobalBackground";
+import { ThemeProviderCustom } from "./theme/ThimProvider"; // screenshot नुसार नाव
+import ThemeSwitcher from "./theme/ThemeSwitcher";
+
+// जर इतर context/provider किंवा components असतील तर इथे import ठेवा
+import SnackbarProviderComponent from "./utils/SnackbarContext"; // जर नसतील तर काढ
+import AppRouter from "./routes/AppRouter"; // तुमचा router — path adjust कर
+
+// आपण App मध्ये ThemeProviderCustom (single) देतो आणि GlobalBackground/app router बाहेर ठेवतो
+export default function App() {
+  useEffect(() => {
+    // default behaviour: जर data-app-theme नसेल तर light set करणे (optional)
+    if (!document.documentElement.getAttribute("data-app-theme")) {
+      document.documentElement.setAttribute("data-app-theme", "light");
+    }
+  }, []);
+
+  return (
+    // ThemeProviderCustom येथे ठेवतो — main.jsx मध्ये Redux Provider आहे आणि ते चालू राहू दे
+    <ThemeProviderCustom>
+      {/* CssBaseline बघून MUI global resets लागू करा */}
+      <StyledEngineProvider injectFirst>
+        <CssBaseline />
+
+        {/* Background + ThemeSwitcher should be outside router so they always render */}
+        <GlobalBackground />
+        <ThemeSwitcher />
+
+        {/* A small root Box so that pages don't cover the BG unintentionally */}
+        <Box
+          className="app-root"
+          sx={{
+            minHeight: "100vh",
+            position: "relative",
+            backgroundColor: "transparent"
+          }}
+        >
+          {/* Optional: if you have a snackbar provider or other global providers */}
+          {typeof SnackbarProviderComponent !== "undefined" ? (
+            <SnackbarProviderComponent>
+              <AppRouter />
+            </SnackbarProviderComponent>
+          ) : (
+            <AppRouter />
+          )}
+        </Box>
+      </StyledEngineProvider>
+    </ThemeProviderCustom>
+  );
+}
