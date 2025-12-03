@@ -1,0 +1,35 @@
+import React, { useContext } from "react";
+import { Box } from "@mui/material";
+import { ThemeContext } from "../context/ThemeProvider";
+
+import lightBg from "../assets/bg-light.png";
+import darkBg from "../assets/bg-dark.png";
+import mintBg from "../assets/bg-mint.png";
+
+const GlobalBackground = () => {
+  const { theme } = useContext(ThemeContext);
+
+  const bgImage = 
+    theme === "dark" ? darkBg :
+    theme === "mint" ? mintBg :
+    lightBg;
+
+  return (
+    <Box
+      sx={{
+        position: "fixed",
+        inset: 0,
+        width: "100vw",
+        height: "100vh",
+        zIndex: -9999,
+        backgroundImage: `url(${bgImage})`,
+        backgroundSize: "cover",
+        backgroundRepeat: "no-repeat",
+        backgroundPosition: "center",
+        transition: "background-image 0.4s ease"
+      }}
+    />
+  );
+};
+
+export default GlobalBackground;
