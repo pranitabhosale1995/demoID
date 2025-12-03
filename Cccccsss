@@ -1,0 +1,2 @@
+html, body, #root { background: transparent !important; height: 100%; }
+.MuiPaper-root, .MuiContainer-root, .app-root, .login-root { background: transparent !important; box-shadow: none !important; }
