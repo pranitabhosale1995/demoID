@@ -1,0 +1,47 @@
+// src/theme/GlobalBackground.jsx
+import React from "react";
+import { Box, useColorScheme } from "@mui/material";
+
+import lightBg from "../assets/Backgrounds/bg1.png";
+import darkBg from "../assets/Backgrounds/dark-bg.png";
+import mintBg from "../assets/Backgrounds/mint-bg.png"; // << mint image
+
+const GlobalBackground = () => {
+  const { mode } = useColorScheme();
+
+  const activeMode = mode || "light";
+
+  const backgroundImage =
+    activeMode === "mint"
+      ? mintBg
+      : activeMode === "dark"
+      ? darkBg
+      : lightBg;
+
+  const filter =
+    activeMode === "dark"
+      ? "brightness(0.75) contrast(1.15)"
+      : activeMode === "mint"
+      ? "brightness(0.95) saturate(110%)"
+      : "brightness(1)";
+
+  return (
+    <Box
+      sx={{
+        position: "fixed",
+        inset: 0,
+        zIndex: -1,
+        backgroundImage: `url(${backgroundImage})`,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        backgroundRepeat: "no-repeat",
+        width: "100vw",
+        height: "100vh",
+        transition: "background-image 0.6s ease, filter 0.6s ease",
+        filter: filter,
+      }}
+    />
+  );
+};
+
+export default GlobalBackground;
