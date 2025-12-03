@@ -1,0 +1,67 @@
+import React, { useMemo, createContext, useState, useEffect } from "react";
+import PropTypes from "prop-types";
+import { ThemeProvider, createTheme } from "@mui/material/styles";
+import { colorSchemes, typography, shadows, shape } from "./themePrimitives";
+import inputsCustomizations from "./customizations/inputs";
+import dataDisplayCustomizations from "./customizations/dataDisplay";
+import feedbackCustomizations from "./customizations/feedback";
+import navigationCustomizations from "./customizations/navigation";
+import surfacesCustomizations from "./customizations/surfaces";
+
+// ⭐ Add this — ThemeContext
+export const ThemeContext = createContext({
+  currentTheme: "light",
+  changeTheme: () => {}
+});
+
+function AppTheme(props) {
+  const { children, disableCustomTheme, themeComponents } = props;
+
+  const [currentTheme, setCurrentTheme] = useState("light");
+
+  useEffect(() => {
+    const saved = localStorage.getItem("app-theme");
+    if (saved) setCurrentTheme(saved);
+  }, []);
+
+  const changeTheme = (themeName) => {
+    setCurrentTheme(themeName);
+    localStorage.setItem("app-theme", themeName);
+  };
+
+  const theme = useMemo(() => {
+    if (disableCustomTheme) return {};
+    return createTheme({
+      cssVariables: {
+        colorSchemeSelector: "data-mui-color-scheme",
+        cssVarPrefix: "template"
+      },
+      colorSchemes,
+      defaultColorScheme: currentTheme,
+      typography,
+      shadows,
+      shape,
+      components: {
+        ...inputsCustomizations,
+        ...dataDisplayCustomizations,
+        ...feedbackCustomizations,
+        ...navigationCustomizations,
+        ...surfacesCustomizations,
+        ...themeComponents
+      }
+    });
+  }, [currentTheme, disableCustomTheme, themeComponents]);
+
+  if (disableCustomTheme) return <>{children}</>;
+
+  // ⭐ Wrap with ThemeContext.Provider
+  return (
+    <ThemeContext.Provider value={{ currentTheme, changeTheme }}>
+      <ThemeProvider theme={theme} disableTransitionOnChange>
+        {children}
+      </ThemeProvider>
+    </ThemeContext.Provider>
+  );
+}
+
+export default AppTheme;
