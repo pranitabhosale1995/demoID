@@ -1,0 +1,18 @@
+const refreshToken = async () => {
+  try {
+    const res = await axios.post(
+      `${resolveConfig("/LS")}/refresh-token`,
+      {},
+      { withCredentials: true }
+    );
+
+    // ⬇️ इथे नवीन token मिळतो
+    const newToken = res.data?.token;
+
+    if (newToken) {
+      // इथे token UPDATE करायचा
+    }
+  } catch (err) {
+    console.error("Token refresh failed", err);
+  }
+};
