@@ -1,0 +1,15 @@
+if (err?.response?.status === 401 && !err.config._retry) {
+  err.config._retry = true;
+
+  try {
+    const newToken = await refreshToken();
+
+    err.config.headers.Authorization =
+      "Bearer " + newToken;
+
+    return axios(err.config); // same API पुन्हा call
+  } catch (e) {
+    navigate("/");
+    throw e;
+  }
+}
