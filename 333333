@@ -1,0 +1,33 @@
+const refreshToken = async () => {
+  const res = await axios.post(
+    "http://localhost:1000/auth/refresh-token",
+    {},
+    { withCredentials: true }
+  );
+
+  const newToken = res.data.token; // ✔ backend confirm केलंस
+  dispatch(setToken(newToken));    // redux update
+  return newToken;                 // 🔑 IMPORTANT
+};
+
+
+
+if (
+  err.response?.status === 401 &&
+  err.response?.data?.error === "TOKEN_EXPIRED"
+) {
+  try {
+    const newToken = await refreshToken();
+
+    // same API retry with new token
+    config.headers.Authorization = `Bearer ${newToken}`;
+
+    const retryResponse = await axios(config);
+    setData(retryResponse.data);
+
+    return returnDataOnly ? retryResponse.data : retryResponse;
+  } catch (e) {
+    navigate("/");
+    throw e;
+  }
+}
