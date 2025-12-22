@@ -1,0 +1,8 @@
+if (
+  status === 401 &&
+  (errorCode === "TOKEN_EXPIRED" || errorCode === "SESSION_EXPIRED") &&
+  !originalRequest._retry
+) {
+  console.log("[SILENT REFRESH] trying refresh");
+  // refresh logic
+}
