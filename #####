@@ -1,0 +1,217 @@
+// useApi.js
+import { useEffect, useRef, useState, useCallback, useMemo } from "react";
+import axios from "axios";
+import { useLocation, useNavigate } from "react-router-dom";
+import { useSelector } from "react-redux";
+import useCustomSnackbar from "../utils/useCustomSnackbar";
+import { resolveConfig } from "../config/EnvironmentConfig";
+
+/* =====================================================
+   🔐 Silent Refresh Globals (FILE LEVEL – IMPORTANT)
+===================================================== */
+let isRefreshing = false;
+let failedQueue = [];
+
+const processQueue = (error, token = null) => {
+  failedQueue.forEach(p => {
+    if (error) p.reject(error);
+    else p.resolve(token);
+  });
+  failedQueue = [];
+};
+
+const useApi = () => {
+  const [data, setData] = useState(null);
+  const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  const navigate = useNavigate();
+  const location = useLocation();
+  const snackbar = useCustomSnackbar();
+
+  const token = useSelector(state => state.auth.token);
+  const menus = useSelector(s => s.menus.menus);
+  const selectedMenuItem = useSelector(s => s.menus.selectedMenuItem);
+
+  const activeRequestsRef = useRef(new Set());
+
+  /* =====================================================
+     🔁 AXIOS INTERCEPTOR (REGISTER ONLY ONCE)
+  ===================================================== */
+  if (!axios.__SILENT_REFRESH__) {
+    axios.__SILENT_REFRESH__ = true;
+
+    axios.interceptors.response.use(
+      response => response,
+
+      async error => {
+        const originalRequest = error.config;
+
+        if (!error.response) {
+          return Promise.reject(error);
+        }
+
+        const status = error.response.status;
+        const errorCode = error.response.data?.error;
+
+        /* 🚨 HARD FAIL → logout */
+        if (
+          status === 401 &&
+          (errorCode === "CONCURRENT_LOGIN" ||
+           errorCode === "SESSION_EXPIRED")
+        ) {
+          localStorage.clear();
+          navigate("/");
+          return Promise.reject(error);
+        }
+
+        /* 🔁 TOKEN EXPIRED → SILENT REFRESH */
+        if (
+          status === 401 &&
+          errorCode === "TOKEN_EXPIRED" &&
+          !originalRequest._retry
+        ) {
+          originalRequest._retry = true;
+
+          if (isRefreshing) {
+            return new Promise((resolve, reject) => {
+              failedQueue.push({ resolve, reject });
+            }).then(newToken => {
+              originalRequest.headers.Authorization =
+                "Bearer " + newToken;
+              return axios(originalRequest);
+            });
+          }
+
+          isRefreshing = true;
+
+          try {
+            const refreshToken = localStorage.getItem("refreshToken");
+            if (!refreshToken) throw new Error("No refresh token");
+
+            const { data } = await axios.post(
+              `${resolveConfig("/LS") ?? ""}/refresh-token`,
+              { refreshToken }
+            );
+
+            localStorage.setItem("accessToken", data.accessToken);
+            localStorage.setItem("refreshToken", data.refreshToken);
+
+            axios.defaults.headers.common.Authorization =
+              "Bearer " + data.accessToken;
+
+            processQueue(null, data.accessToken);
+            isRefreshing = false;
+
+            originalRequest.headers.Authorization =
+              "Bearer " + data.accessToken;
+
+            return axios(originalRequest);
+          } catch (refreshError) {
+            processQueue(refreshError, null);
+            isRefreshing = false;
+            localStorage.clear();
+            navigate("/");
+            return Promise.reject(refreshError);
+          }
+        }
+
+        return Promise.reject(error);
+      }
+    );
+  }
+
+  /* =====================================================
+     ❌ Cancel all pending requests on unmount
+  ===================================================== */
+  const cancelAllRequests = () => {
+    activeRequestsRef.current.forEach(controller => {
+      if (controller && !controller.signal.aborted) {
+        controller.abort();
+      }
+    });
+    activeRequestsRef.current.clear();
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    return () => cancelAllRequests();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  /* =====================================================
+     🌐 GENERIC API CALLER
+  ===================================================== */
+  const callApi = useCallback(
+    async ({
+      url,
+      payload = null,
+      method = "GET",
+      responseType,
+      contentType = "application/json",
+      extraConfig = {},
+      returnDataOnly = true
+    }) => {
+      const controller = new AbortController();
+      activeRequestsRef.current.add(controller);
+
+      try {
+        setLoading(true);
+        setError(null);
+
+        const config = {
+          url,
+          method,
+          responseType,
+          signal: controller.signal,
+          headers: {
+            "Content-Type": contentType,
+            Authorization: token ? `Bearer ${token}` : undefined
+          },
+          ...extraConfig
+        };
+
+        if (payload !== null) {
+          if (method.toUpperCase() === "GET") {
+            config.params = payload;
+          } else {
+            config.data = payload;
+          }
+        }
+
+        const response = await axios(config);
+
+        // ✅ Only BUSINESS logic here
+        if (response?.data?.status === 440) {
+          navigate("/");
+          return;
+        }
+
+        setData(response.data);
+        return returnDataOnly ? response.data : response;
+      } catch (err) {
+        setError(err);
+
+        // ❌ 401 इथे handle करू नको (interceptor करतो)
+        if (!axios.isCancel(err)) {
+          console.error("API error:", err);
+        }
+        throw err;
+      } finally {
+        activeRequestsRef.current.delete(controller);
+        setLoading(false);
+      }
+    },
+    [token, navigate]
+  );
+
+  return {
+    data,
+    error,
+    loading,
+    callApi,
+    cancelAllRequests
+  };
+};
+
+export default useApi;
