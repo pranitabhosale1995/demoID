@@ -1,0 +1,9 @@
+import axios from "axios";
+
+axios.defaults.baseURL = "http://localhost:8080"; 
+// किंवा तुमचा backend URL
+
+const token = localStorage.getItem("accessToken");
+if (token) {
+  axios.defaults.headers.common["Authorization"] = "Bearer " + token;
+}
