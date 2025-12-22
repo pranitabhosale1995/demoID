@@ -1,0 +1,51 @@
+const refreshToken = async () => {
+  const res = await axios.get(
+    `${resolveConfig("/LS")}/auth/refresh-token`,
+    {
+      withCredentials: true,
+      headers: {
+        Authorization: undefined,
+      },
+    }
+  );
+
+  const newToken = res.data.token;
+  dispatch(setToken(newToken));
+  return newToken;
+};
+
+
+
+catch (err) {
+  const status = err.response?.status;
+  const errorCode = err.response?.data?.error;
+
+  // 🔁 SILENT REFRESH
+  if (status === 401 && errorCode === "TOKEN_EXPIRED" && !config._retry) {
+    config._retry = true;
+
+    try {
+      const newToken = await refreshToken();
+
+      config.headers.Authorization = `Bearer ${newToken}`;
+      const retryRes = await axios(config);
+
+      return returnDataOnly ? retryRes.data : retryRes;
+    } catch (refreshErr) {
+      throw refreshErr;
+    }
+  }
+
+  // ❌ Normal error flow (existing code)
+  if (!axios.isCancel(err)) {
+    snackbar(
+      err.response?.data?.message ||
+        err.response?.statusText ||
+        "Something went wrong",
+      "error"
+    );
+    setError(err);
+  }
+
+  throw err;
+}
