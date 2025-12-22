@@ -1,0 +1,22 @@
+const refreshToken = async () => {
+  const raw = sessionStorage.getItem("persist:auth");
+  if (!raw) throw new Error("No auth");
+
+  const auth = JSON.parse(raw);
+
+  // redux-persist मुळे token string मध्ये आहे
+  const rToken = JSON.parse(auth.refreshToken);
+
+  const res = await axios.post(
+    "/auth/refresh-token",
+    { refreshToken: rToken }
+  );
+
+  // new tokens save कर
+  auth.accessToken = JSON.stringify(res.data.accessToken);
+  auth.refreshToken = JSON.stringify(res.data.refreshToken);
+
+  sessionStorage.setItem("persist:auth", JSON.stringify(auth));
+
+  return res.data.accessToken;
+};
