@@ -1,0 +1,8 @@
+const response = await axios.post(
+  "/auth/refresh-token",
+  { refreshToken }
+);
+
+// 🔥 IMPORTANT LOG
+console.log("[REFRESH RESPONSE FULL]", response);
+console.log("[REFRESH RESPONSE DATA]", response.data);
