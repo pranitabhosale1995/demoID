@@ -1,0 +1,15 @@
+const refreshToken = async () => {
+  const res = await axios.get(
+    `${resolveConfig("/LS")}/auth/refresh-token`,
+    {
+      withCredentials: true,
+      headers: {
+        Authorization: undefined,
+      },
+    }
+  );
+
+  const newToken = res.data.token;
+  dispatch(setToken(newToken));
+  return newToken;
+};
