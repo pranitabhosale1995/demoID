@@ -1,0 +1,23 @@
+if (
+  status === 401 &&
+  err.response?.data?.error === "TOKEN_EXPIRED"
+) {
+  console.log("Access token expired → refreshing token");
+
+  try {
+    await refreshToken();   // 👈 already exists
+    return callApi(
+      url,
+      payload,
+      method,
+      responseType,
+      contentType,
+      extraConfig,
+      returnDataOnly
+    ); // 👈 retry same API
+  } catch (e) {
+    console.error("Refresh token failed");
+    navigate("/");
+    throw e;
+  }
+}
