@@ -1,0 +1,60 @@
+// वरती import करा
+import { useDispatch } from "react-redux";
+// तुमच्या existing slice मधून action import करा (उदा. setToken)
+// import { setToken } from "../store/authSlice"; 
+
+const useApi = () => {
+    const dispatch = useDispatch(); // Line 22-25 च्या आसपास ऍड करा
+    // ... बाकी state
+
+
+    const refreshToken = async () => {
+    try {
+        const res = await axios.post(
+            `${resolveConfig("/LS") ?? ""}/Auth/refresh-token`,
+            {},
+            { withCredentials: true }
+        );
+        
+        if (res.status === 200 || res.data.status === "Success") {
+            const newToken = res.data.token; // तुमच्या API नुसार key तपासा
+            
+            // Redux store update करा जेणेकरून पुढच्या requests ला नवीन token मिळेल
+            // dispatch(setToken(newToken)); 
+            
+            return newToken;
+        }
+    } catch (err) {
+        console.error("Token refresh failed", err);
+        // जर refresh token पण expire झाला असेल तर सरळ logout करा
+        navigate("/");
+        return null;
+    }
+};
+
+
+// Catch block मध्ये बदल करा:
+} catch (err) {
+    const status = err.response?.status;
+
+    if (status === 401) {
+        console.log("Token expired, refreshing...");
+        const newToken = await refreshToken();
+
+        if (newToken) {
+            // मूळ request ची config घ्या
+            const originalConfig = err.config;
+            // नवीन token सेट करा
+            originalConfig.headers.Authorization = `Bearer ${newToken}`;
+            
+            // तीच API request पुन्हा पाठवा (Retry)
+            return axios(originalConfig);
+        }
+    }
+
+    if (status === 440) {
+        console.error("Multiple login session error");
+        navigate("/");
+    }
+    // ... बाकी error handling
+}
