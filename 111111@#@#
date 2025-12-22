@@ -1,0 +1,47 @@
+catch (err) {
+  const status = err.response?.status;
+
+  // 🔴 Concurrent login
+  if (status === 440) {
+    console.error("You have logged in another session");
+    navigate("/");
+    return;
+  }
+
+  // 🟢 TOKEN EXPIRED → SILENT REFRESH
+  if (
+    status === 401 &&
+    err.response?.data?.error === "TOKEN_EXPIRED"
+  ) {
+    try {
+      const newToken = await refreshToken();
+
+      // retry same request with new token
+      config.headers.Authorization = `Bearer ${newToken}`;
+      const retryRes = await axios(config);
+
+      return returnDataOnly ? retryRes.data : retryRes;
+    } catch (refreshErr) {
+      navigate("/");
+      throw refreshErr;
+    }
+  }
+
+  // ❌ बाकी error
+  if (!axios.isCancel(err) && !controller.signal.aborted) {
+    console.error("API call error:", err);
+
+    const apiMessage =
+      err.response?.data?.result?.message ||
+      err.response?.data?.message ||
+      err.response?.statusText ||
+      "Something went wrong";
+
+    snackbar(apiMessage, "error");
+    setError(err);
+  }
+
+  if (axios.isCancel(err)) {
+    throw err;
+  }
+}
