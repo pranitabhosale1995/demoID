@@ -1,0 +1,28 @@
+if (err?.response?.status === 401 && !err.config._retry) {
+  err.config._retry = true;
+
+  try {
+    const raw = sessionStorage.getItem("persist:auth");
+    const auth = JSON.parse(raw);
+    const refreshToken = JSON.parse(auth.refreshToken);
+
+    const res = await axios.post(
+      "/auth/refresh-token",
+      { refreshToken }
+    );
+
+    auth.accessToken = JSON.stringify(res.data.accessToken);
+    auth.refreshToken = JSON.stringify(res.data.refreshToken);
+
+    sessionStorage.setItem("persist:auth", JSON.stringify(auth));
+
+    err.config.headers.Authorization =
+      "Bearer " + res.data.accessToken;
+
+    return axios(err.config); // 🔁 retry same API
+  } catch (e) {
+    // ❌ refresh fail झाला तरच logout
+    navigate("/");
+    throw e;
+  }
+}
