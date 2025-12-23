@@ -1,0 +1,92 @@
+const callApi = useCallback(
+    async (
+        url,
+        payload = null,
+        method = "POST",
+        responseType = "json",
+        contentType = "application/json",
+        extraConfig = {},
+        returnDataOnly = true
+    ) => {
+        setLoading(true);
+        const controller = new AbortController();
+        activeRequestsRef.current.add(controller);
+
+        const config = {
+            url,
+            method,
+            responseType,
+            headers: {
+                "Content-Type": contentType,
+            },
+            signal: controller.signal,
+            ...extraConfig,
+        };
+
+        // Attach payload depending on method type
+        if (payload !== null) {
+            if (method.toUpperCase() === "GET") {
+                config.params = payload;
+            } else {
+                config.data = payload;
+            }
+        }
+
+        try {
+            const response = await axios(config);
+
+            if (!controller.signal.aborted) {
+                // 1. Loud Logout Logic (Status 440 - Multiple Session)
+                if (response.data.status === 440) {
+                    console.error("Concurrent login detected");
+                    navigate("/");
+                    return;
+                }
+
+                // 2. Silent Refresh Logic (Status 401 - Token Expired in data)
+                if (response?.data?.status === 401) {
+                    console.warn("401 detected in data. Refreshing token...");
+                    const newToken = await refreshToken();
+                    if (newToken) {
+                        // Navin token sobat punha callApi kagne
+                        return callApi(url, payload, method, responseType, contentType, extraConfig, returnDataOnly);
+                    }
+                }
+
+                setData(response.data);
+                return returnDataOnly ? response.data : response;
+            }
+        } catch (err) {
+            const status = err.response?.status;
+
+            // 3. Catch block Silent Refresh (Status 401 - Unauthorized)
+            if (status === 401) {
+                console.warn("401 Error caught. Refreshing token...");
+                const newToken = await refreshToken();
+                if (newToken) {
+                    // Original request retry karne
+                    const originalConfig = err.config;
+                    originalConfig.headers.Authorization = `Bearer ${newToken}`;
+                    return axios(originalConfig);
+                }
+            }
+
+            // Existing 440 Handling in catch
+            if (status === 440) {
+                console.error("Session expired - 440");
+                navigate("/");
+            }
+
+            // Tujhi original error handling
+            if (!axios.isCancel(err) && !controller.signal.aborted) {
+                console.error("API call error:", err);
+                const apiMessage = err.response?.data?.message || "Something went wrong";
+                snackbar.showError(apiMessage); // Tuzya existing snackbar nusar
+            }
+        } finally {
+            activeRequestsRef.current.delete(controller);
+            setLoading(false);
+        }
+    },
+    [navigate, snackbar, refreshToken, dispatch] // Dependencies check kara
+);
