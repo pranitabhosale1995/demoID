@@ -1,0 +1,50 @@
+const refreshToken = async () => {
+    try {
+        const expiredToken = sessionStorage.getItem("accessToken");
+        if (!expiredToken) return null;
+
+        console.log("Refreshing token via GET...");
+        // GET method aslyamule token URL madhe kiva params madhe pathva
+        const res = await axios.get(
+            `${resolveConfig("/LS") ?? ""}/Auth/refresh-token`,
+            { 
+                params: { token: expiredToken }, // Backend query parameter vaprat asel tar
+                withCredentials: true 
+            }
+        );
+        
+        // Response check kara: status 'Success' asne garjeche ahe
+        if (res.status === 200 && res.data.token) {
+            const newToken = res.data.token; 
+            
+            // Session Storage ani Redux SET kara
+            sessionStorage.setItem("accessToken", newToken);
+            dispatch(setToken(newToken)); 
+            
+            console.log("Token Refreshed Successfully!");
+            return newToken;
+        } else {
+            console.error("Refresh API returned 200 but no token found");
+            return null;
+        }
+    } catch (err) {
+        console.error("Refresh API failed", err);
+        return null; // Yithe navigate karu naka, callApi karel
+    }
+};
+
+
+// Response block (Line 178 javal)
+if (response?.data?.status === 401) {
+    const newToken = await refreshToken();
+    if (newToken) {
+        // Navin token sobat retry kara
+        return callApi(url, payload, method, responseType, contentType, extraConfig, returnDataOnly);
+    } else {
+        // Jar refresh fail zala tarach logout kara
+        console.error("Silent refresh failed, redirecting to login");
+        sessionStorage.clear();
+        navigate("/");
+        return;
+    }
+}
