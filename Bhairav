@@ -1,0 +1,103 @@
+const refreshToken = async () => {
+    try {
+        // Redux ani Storage donhi check kara
+        const oldToken = sessionStorage.getItem("accessToken") || token;
+
+        // Jar token undefined asel tar refresh call karu naka
+        if (!oldToken || oldToken === "undefined") {
+            console.error("Token is undefined in storage!");
+            return null;
+        }
+
+        const res = await axios.get(
+            `${resolveConfig("/LS") ?? ""}/Auth/refresh-token`,
+            { 
+                params: { token: oldToken }, 
+                withCredentials: true 
+            }
+        );
+        
+        if (res.status === 200 && res.data.token) {
+            const newToken = res.data.token; 
+            sessionStorage.setItem("accessToken", newToken); // Storage update
+            dispatch(setToken(newToken)); // Redux update
+            return newToken;
+        }
+        return null;
+    } catch (err) {
+        return null;
+    }
+};
+
+
+
+
+const callApi = useCallback(
+    async (url, payload = null, method = "POST", responseType = "json", contentType = "application/json", extraConfig = {}, returnDataOnly = true) => {
+        setLoading(true);
+        const controller = new AbortController();
+        activeRequestsRef.current.add(controller);
+
+        // Header sathi current token gha
+        const activeToken = sessionStorage.getItem("accessToken") || token;
+
+        const config = {
+            url,
+            method,
+            responseType,
+            headers: {
+                "Content-Type": contentType,
+                // Jar token 'undefined' asel tar header pathvu naka
+                ...(activeToken && activeToken !== "undefined" && { Authorization: `Bearer ${activeToken}` })
+            },
+            signal: controller.signal,
+            ...extraConfig,
+        };
+
+        if (payload !== null) {
+            method.toUpperCase() === "GET" ? (config.params = payload) : (config.data = payload);
+        }
+
+        try {
+            const response = await axios(config);
+            if (!controller.signal.aborted) {
+                // Status 440: Logout
+                if (response?.data?.status === 440) {
+                    navigate("/");
+                    return;
+                }
+
+                // Status 401: Silent Refresh
+                if (response?.data?.status === 401) {
+                    const newToken = await refreshToken();
+                    if (newToken) {
+                        return callApi(url, payload, method, responseType, contentType, extraConfig, returnDataOnly);
+                    } else {
+                        navigate("/");
+                        return;
+                    }
+                }
+                setData(response.data);
+                return returnDataOnly ? response.data : response;
+            }
+        } catch (err) {
+            const status = err.response?.status;
+            if (status === 401) {
+                const newToken = await refreshToken();
+                if (newToken) {
+                    const originalConfig = err.config;
+                    originalConfig.headers.Authorization = `Bearer ${newToken}`;
+                    return axios(originalConfig);
+                }
+            }
+            if (status === 440) navigate("/");
+            if (!axios.isCancel(err) && !controller.signal.aborted) {
+                snackbar.showError(err.response?.data?.message || "Error");
+            }
+        } finally {
+            activeRequestsRef.current.delete(controller);
+            setLoading(false);
+        }
+    },
+    [navigate, snackbar, token, dispatch, refreshToken]
+);
