@@ -1,0 +1,172 @@
+import { useEffect, useRef, useState, useCallback, useMemo } from "react";
+import axios from "axios";
+import { useLocation, useNavigate } from "react-router-dom";
+import useCustomSnackbar from "../utils/useCustomSnackbar";
+import { useSelector, useDispatch } from "react-redux";
+import { resolveConfig } from "../config/EnvironmentConfig";
+import { setToken } from "../store/authSlice";
+import { convertToKebabCase } from "../utils/CommonUtilities";
+
+const useApi = () => {
+    const [data, setData] = useState(null);
+    const [error, setError] = useState(null);
+    const [loading, setLoading] = useState(false);
+    
+    const navigate = useNavigate();
+    const location = useLocation();
+    const snackbar = useCustomSnackbar();
+    const dispatch = useDispatch();
+    
+    // Redux store madhun token ghene
+    const token = useSelector((state) => state.auth.token);
+    const activeRequestsRef = useRef(new Set());
+
+    /** 1. Silent Refresh Handler (Backend Requirement pramane) */
+    const refreshToken = async () => {
+        try {
+            // Storage madhe undefined aslyas Redux token vapra
+            let oldToken = sessionStorage.getItem("accessToken");
+            if (!oldToken || oldToken === "undefined") {
+                oldToken = token;
+            }
+
+            if (!oldToken || oldToken === "undefined") return null;
+
+            const res = await axios.get(
+                `${resolveConfig("/LS") ?? ""}/Auth/refresh-token`,
+                { params: { token: oldToken }, withCredentials: true }
+            );
+            
+            if (res.status === 200 && res.data.token) {
+                const newToken = res.data.token; 
+                sessionStorage.setItem("accessToken", newToken); // Storage fix
+                dispatch(setToken(newToken)); 
+                return newToken;
+            }
+            return null;
+        } catch (err) {
+            console.error("Silent Refresh failed", err);
+            return null;
+        }
+    };
+
+    /** 2. callApi (Tujhya original structure madhe Silent Refresh add kela ahe) */
+    const callApi = useCallback(
+        async (
+            url,
+            payload = null,
+            method = "GET", 
+            responseType = "json",
+            contentType = "application/json",
+            extraConfig = {},
+            returnDataOnly = true
+        ) => {
+            // --- Service Resolution (Tujhe original logic) ---
+            const parts = url.split("/");
+            const service = parts[1];
+            const resolved = resolveConfig(`/${service}`);
+            parts[1] = resolved;
+            const Final_Url = parts.slice(1).join("/");
+
+            const controller = new AbortController();
+            activeRequestsRef.current.add(controller);
+            setLoading(true); //
+            setError(null);
+
+            // undefined token fix: Storage kiva Redux
+            let activeToken = sessionStorage.getItem("accessToken");
+            if (!activeToken || activeToken === "undefined") {
+                activeToken = token;
+            }
+
+            const config = {
+                method: method.toUpperCase(),
+                url: Final_Url,
+                headers: {
+                    // Header madhe Bearer token asne garjeche ahe
+                    ...(activeToken && activeToken !== "undefined" && { Authorization: `Bearer ${activeToken}` }),
+                    "Content-Type": contentType,
+                },
+                responseType,
+                withCredentials: true,
+                signal: controller.signal,
+                ...extraConfig,
+            };
+
+            if (payload !== null) {
+                method.toUpperCase() === "GET" ? (config.params = payload) : (config.data = payload);
+            }
+
+            try {
+                const response = await axios(config);
+
+                if (!controller.signal.aborted) {
+                    // --- 440 Handling (Loud Logout) ---
+                    if (response?.data?.status === 440) {
+                        console.error("Loud Logout: Concurrent Session");
+                        navigate("/");
+                        return;
+                    }
+
+                    // --- 401 Handling (Silent Refresh) ---
+                    if (response?.data?.status === 401) {
+                        const newToken = await refreshToken();
+                        if (newToken) {
+                            return callApi(url, payload, method, responseType, contentType, extraConfig, returnDataOnly);
+                        } else {
+                            navigate("/");
+                            return;
+                        }
+                    }
+
+                    setData(response.data); //
+                    return returnDataOnly ? response.data : response;
+                }
+            } catch (err) {
+                const status = err.response?.status;
+
+                // Catch block madhle 401 Silent Refresh
+                if (status === 401) {
+                    const newToken = await refreshToken();
+                    if (newToken) {
+                        const originalConfig = err.config;
+                        originalConfig.headers.Authorization = `Bearer ${newToken}`;
+                        return axios(originalConfig); // Failed call retry
+                    }
+                }
+
+                if (status === 440) navigate("/");
+
+                // Tujhya original snackbar error logic pramane
+                if (!axios.isCancel(err) && !controller.signal.aborted) {
+                    const apiMessage = err.response?.data?.message || err.response?.statusText || "Something went wrong";
+                    snackbar.showError(apiMessage, "error"); 
+                    setError(err);
+                }
+            } finally {
+                activeRequestsRef.current.delete(controller);
+                setLoading(false); //
+            }
+        },
+        [navigate, snackbar, token, dispatch]
+    );
+
+    // Cancel all requests logic (Juna code)
+    const cancelAllRequests = useCallback(() => {
+        activeRequestsRef.current.forEach((controller) => {
+            if (controller && !controller.signal.aborted) {
+                controller.abort();
+            }
+        });
+        activeRequestsRef.current.clear();
+        setLoading(false);
+    }, []);
+
+    useEffect(() => {
+        return () => cancelAllRequests();
+    }, [cancelAllRequests]);
+
+    return { data, error, loading, callApi, refreshToken, cancelAllRequests };
+};
+
+export default useApi;
