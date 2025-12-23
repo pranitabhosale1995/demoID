@@ -1,0 +1,70 @@
+const refreshToken = async () => {
+    try {
+        console.log("Token expired! Refreshing with old token...");
+        
+        // Session Storage madhun junach token gya jo expire zalay
+        const expiredToken = sessionStorage.getItem("accessToken"); 
+
+        const res = await axios.post(
+            `${resolveConfig("/LS") ?? ""}/Auth/refresh-token`,
+            { token: expiredToken }, // Juna token body madhe pathva
+            { withCredentials: true }
+        );
+        
+        // Backend 'Success' status kiva 200 det asel tar
+        if (res.status === 200 || res.data.status === "Success") {
+            const newToken = res.data.token; 
+            
+            // 1. Session Storage madhe navin token overwrite kara
+            sessionStorage.setItem("accessToken", newToken);
+            
+            // 2. Redux state update kara
+            dispatch(setToken(newToken)); 
+            
+            console.log("New Token Received & Saved:", newToken);
+            return newToken;
+        }
+    } catch (err) {
+        console.error("Refresh Process Failed:", err);
+        // Jar refresh fail zale tar login la pathva
+        sessionStorage.clear();
+        navigate("/"); 
+        return null;
+    }
+};
+
+
+} catch (err) {
+    const status = err.response?.status;
+
+    // Jar 401 error ala (Token expired)
+    if (status === 401) {
+        console.warn("401 Unauthorized detected. Starting Auto-Refresh...");
+        
+        // Navin token chi vat bghnyasathi 'await' vapra
+        const newToken = await refreshToken(); 
+
+        if (newToken) {
+            // Failed request chi config gha
+            const originalConfig = err.config;
+            
+            // Navin token headers madhe update kara
+            originalConfig.headers.Authorization = `Bearer ${newToken}`;
+            
+            console.log("Retrying the original API call with new token...");
+            // Ti request punha pathva (Retry)
+            return axios(originalConfig);
+        }
+    }
+
+    // Existing 440 (Multiple Login) logic
+    if (status === 440) {
+        console.error("Session expired or logged in elsewhere");
+        navigate("/");
+    }
+    
+    // Baki error handling (Line 199-202)
+    if (!axios.isCancel(err) && !controller.signal.aborted) {
+        console.error("Final API Error:", err);
+    }
+}
