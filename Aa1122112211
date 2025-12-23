@@ -1,0 +1,54 @@
+const refreshToken = async () => {
+    try {
+        // 1. Session Storage madhun refresh token gha (tumchi key check kara, udaharanaarth 'refreshToken')
+        const currentRefreshToken = sessionStorage.getItem("refreshToken");
+
+        const res = await axios.post(
+            `${resolveConfig("/LS") ?? ""}/Auth/refresh-token`,
+            { token: currentRefreshToken }, // Backend la token pathva
+            { withCredentials: true }
+        );
+        
+        if (res.status === 200) {
+            const newToken = res.data.token; 
+            
+            // 2. Session Storage madhe navin token save kara
+            sessionStorage.setItem("accessToken", newToken); 
+            
+            // 3. Redux update kara (varti import kelele setToken vapra)
+            dispatch(setToken(newToken)); 
+            
+            return newToken;
+        }
+    } catch (err) {
+        console.error("Refresh failed, logging out...");
+        sessionStorage.clear(); // Storage saaf kara
+        navigate("/"); 
+        return null;
+    }
+};
+
+
+
+} catch (err) {
+    const status = err.response?.status;
+
+    if (status === 401) {
+        console.log("Token expired, trying to refresh...");
+        
+        // Refresh token function call kara
+        const newToken = await refreshToken();
+
+        if (newToken) {
+            // Original request chi config gha
+            const originalConfig = err.config;
+            
+            // Navin token header madhe taka
+            originalConfig.headers.Authorization = `Bearer ${newToken}`;
+            
+            // Ti request punha pathva (Retry)
+            return axios(originalConfig);
+        }
+    }
+    // ... baki status 440 logic tasach theva
+}
