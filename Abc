@@ -1,0 +1,174 @@
+import { useEffect, useRef, useState, useCallback, useMemo } from "react";
+import axios from "axios";
+import { useLocation, useNavigate } from "react-router-dom";
+import useCustomSnackbar from "../utils/useCustomSnackbar";
+import { useSelector, useDispatch } from "react-redux";
+import { resolveConfig } from "../config/EnvironmentConfig";
+import { setToken } from "../store/authSlice";
+import { convertToKebabCase } from "../utils/CommonUtilities";
+
+const useApi = () => {
+    const [data, setData] = useState(null);
+    const [error, setError] = useState(null);
+    const [loading, setLoading] = useState(false);
+    
+    const navigate = useNavigate();
+    const location = useLocation();
+    const snackbar = useCustomSnackbar();
+    const dispatch = useDispatch();
+    
+    // Redux Persist मुळे या 'token' व्हेरिएबलमध्ये 'persist:auth' मधील डेटा आपोआप येतो
+    const token = useSelector((state) => state.auth.token);
+    const activeRequestsRef = useRef(new Set());
+
+    /** 1. Silent Refresh Handler (Using Redux Persist Token) */
+    const refreshToken = async () => {
+        try {
+            // जर Redux मध्ये टोकन नसेल तर रिफ्रेश करू नका
+            if (!token || token === "undefined") {
+                console.error("Persist Auth मध्ये टोकन सापडला नाही!");
+                return null;
+            }
+
+            console.log("Silent Refreshing with Persisted Token...");
+            
+            // Backend GET रिक़्वेस्ट आणि query param मध्ये टोकन
+            const res = await axios.get(
+                `${resolveConfig("/LS") ?? ""}/Auth/refresh-token`,
+                { 
+                    params: { token: token }, 
+                    withCredentials: true 
+                }
+            );
+            
+            if (res.status === 200 && res.data.token) {
+                const newToken = res.data.token; 
+                
+                // फक्त Redux अपडेट करा, Redux Persist त्याला 'persist:auth' मध्ये आपोआप सेव्ह करेल
+                dispatch(setToken(newToken)); 
+                
+                console.log("Token Refreshed and Persisted Successfully!");
+                return newToken;
+            }
+            return null;
+        } catch (err) {
+            console.error("Silent Refresh failed", err);
+            return null;
+        }
+    };
+
+    /** 2. callApi (Original Structure with Silent Refresh Integrated) */
+    const callApi = useCallback(
+        async (
+            url,
+            payload = null,
+            method = "GET", 
+            responseType = "json",
+            contentType = "application/json",
+            extraConfig = {},
+            returnDataOnly = true
+        ) => {
+            // --- Service Resolution Logic (तुझे मूळ लॉजिक) ---
+            const parts = url.split("/");
+            const service = parts[1];
+            const resolved = resolveConfig(`/${service}`);
+            parts[1] = resolved;
+            const Final_Url = parts.slice(1).join("/");
+
+            const controller = new AbortController();
+            activeRequestsRef.current.add(controller);
+            setLoading(true);
+            setError(null);
+
+            const config = {
+                method: method.toUpperCase(),
+                url: Final_Url,
+                headers: {
+                    "Content-Type": contentType,
+                    // फक्त Redux मधील 'token' वापरून हेडर सेट करा
+                    ...(token && token !== "undefined" && { Authorization: `Bearer ${token}` })
+                },
+                responseType,
+                withCredentials: true,
+                signal: controller.signal,
+                ...extraConfig,
+            };
+
+            if (payload !== null) {
+                method.toUpperCase() === "GET" ? (config.params = payload) : (config.data = payload);
+            }
+
+            try {
+                const response = await axios(config);
+
+                if (!controller.signal.aborted) {
+                    // --- 440 Handling (Loud Logout) ---
+                    if (response?.data?.status === 440) {
+                        console.error("Concurrent login detected");
+                        navigate("/");
+                        return;
+                    }
+
+                    // --- 401 Handling (Silent Refresh logic) ---
+                    if (response?.data?.status === 401) {
+                        const newToken = await refreshToken();
+                        if (newToken) {
+                            // नवीन टोकनसह मूळ API पुन्हा कॉल करा
+                            return callApi(url, payload, method, responseType, contentType, extraConfig, returnDataOnly);
+                        } else {
+                            navigate("/");
+                            return;
+                        }
+                    }
+
+                    setData(response.data);
+                    return returnDataOnly ? response.data : response;
+                }
+            } catch (err) {
+                const status = err.response?.status;
+
+                // Catch block मधील Silent Refresh (Status 401)
+                if (status === 401) {
+                    const newToken = await refreshToken();
+                    if (newToken) {
+                        const originalConfig = err.config;
+                        originalConfig.headers.Authorization = `Bearer ${newToken}`;
+                        return axios(originalConfig); 
+                    }
+                }
+
+                if (status === 440) navigate("/");
+
+                // तुझे मूळ Error & Snackbar लॉजिक
+                if (!axios.isCancel(err) && !controller.signal.aborted) {
+                    const apiMessage = err.response?.data?.message || err.response?.statusText || "Something went wrong";
+                    snackbar.showError(apiMessage, "error"); 
+                    setError(err);
+                }
+            } finally {
+                activeRequestsRef.current.delete(controller);
+                setLoading(false);
+            }
+        },
+        [navigate, snackbar, token, dispatch]
+    );
+
+    // तुझे मूळ Cleanup लॉजिक
+    const cancelAllRequests = useCallback(() => {
+        activeRequestsRef.current.forEach((controller) => {
+            if (controller && !controller.signal.aborted) {
+                controller.abort();
+            }
+        });
+        activeRequestsRef.current.clear();
+        setLoading(false);
+    }, []);
+
+    useEffect(() => {
+        return () => cancelAllRequests();
+    }, [cancelAllRequests]);
+
+    return { data, error, loading, callApi, refreshToken, cancelAllRequests };
+};
+
+export default useApi;
