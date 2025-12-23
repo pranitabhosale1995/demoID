@@ -1,0 +1,121 @@
+const refreshToken = async () => {
+    try {
+        // Redux ani Session Storage madhun token ghene
+        const expiredToken = sessionStorage.getItem("accessToken") || token;
+
+        // Jar token nasel kiva 'undefined' asel tar call karu naka
+        if (!expiredToken || expiredToken === "undefined") {
+            console.error("Token missing, cannot refresh.");
+            return null;
+        }
+
+        const res = await axios.get(
+            `${resolveConfig("/LS") ?? ""}/Auth/refresh-token`,
+            { 
+                params: { token: expiredToken }, // GET params madhe token pathvane
+                withCredentials: true 
+            }
+        );
+        
+        if (res.status === 200 && res.data.token) {
+            const newToken = res.data.token; 
+            // Navin token store ani dispatch kara
+            sessionStorage.setItem("accessToken", newToken);
+            dispatch(setToken(newToken)); 
+            return newToken;
+        }
+        return null;
+    } catch (err) {
+        console.error("Refresh API failed", err);
+        return null;
+    }
+};
+
+
+
+const callApi = useCallback(
+    async (
+        url,
+        payload = null,
+        method = "POST",
+        responseType = "json",
+        contentType = "application/json",
+        extraConfig = {},
+        returnDataOnly = true
+    ) => {
+        setLoading(true);
+        const controller = new AbortController();
+        activeRequestsRef.current.add(controller);
+
+        // Header sathi valid token ghene
+        const activeToken = sessionStorage.getItem("accessToken") || token;
+
+        const config = {
+            url,
+            method,
+            responseType,
+            headers: {
+                "Content-Type": contentType,
+                // Jar token valid asel tarach Authorization header add kara
+                ...(activeToken && activeToken !== "undefined" && { Authorization: `Bearer ${activeToken}` })
+            },
+            signal: controller.signal,
+            ...extraConfig,
+        };
+
+        if (payload !== null) {
+            method.toUpperCase() === "GET" ? (config.params = payload) : (config.data = payload);
+        }
+
+        try {
+            const response = await axios(config);
+
+            if (!controller.signal.aborted) {
+                // Loud Logout (Status 440)
+                if (response?.data?.status === 440) {
+                    navigate("/");
+                    return;
+                }
+
+                // Silent Refresh (Status 401 in data)
+                if (response?.data?.status === 401) {
+                    const newToken = await refreshToken();
+                    if (newToken) {
+                        return callApi(url, payload, method, responseType, contentType, extraConfig, returnDataOnly);
+                    } else {
+                        sessionStorage.clear();
+                        navigate("/");
+                        return;
+                    }
+                }
+
+                setData(response.data);
+                return returnDataOnly ? response.data : response;
+            }
+        } catch (err) {
+            const status = err.response?.status;
+
+            // Catch block madhle Silent Refresh
+            if (status === 401) {
+                const newToken = await refreshToken();
+                if (newToken) {
+                    const originalConfig = err.config;
+                    originalConfig.headers.Authorization = `Bearer ${newToken}`;
+                    return axios(originalConfig); // Failed request retry kara
+                }
+            }
+
+            if (status === 440) navigate("/");
+
+            if (!axios.isCancel(err) && !controller.signal.aborted) {
+                const apiMessage = err.response?.data?.message || "An error occurred";
+                snackbar.showError(apiMessage);
+            }
+        } finally {
+            activeRequestsRef.current.delete(controller);
+            setLoading(false);
+        }
+    },
+    [navigate, snackbar, token, dispatch, refreshToken]
+);
+
