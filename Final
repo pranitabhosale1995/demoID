@@ -1,0 +1,123 @@
+import { useEffect, useRef, useState, useCallback } from "react";
+import axios from "axios";
+import { useNavigate } from "react-router-dom";
+import useCustomSnackbar from "../utils/useCustomSnackbar";
+import { useSelector, useDispatch } from "react-redux";
+import { resolveConfig } from "../config/EnvironmentConfig";
+import { setToken } from "../store/authSlice";
+
+const useApi = () => {
+    const [data, setData] = useState(null);
+    const [loading, setLoading] = useState(false);
+    const navigate = useNavigate();
+    const snackbar = useCustomSnackbar();
+    const dispatch = useDispatch();
+    const token = useSelector((state) => state.auth.token);
+    const activeRequestsRef = useRef(new Set());
+
+    /** 1. Silent Refresh Function */
+    const refreshToken = async () => {
+        try {
+            let oldToken = sessionStorage.getItem("accessToken") || token;
+            if (!oldToken || oldToken === "undefined") return null;
+
+            const res = await axios.get(
+                `${resolveConfig("/LS") ?? ""}/Auth/refresh-token`,
+                { params: { token: oldToken }, withCredentials: true }
+            );
+            
+            if (res.status === 200 && res.data.token) {
+                const newToken = res.data.token; 
+                sessionStorage.setItem("accessToken", newToken);
+                dispatch(setToken(newToken)); 
+                return newToken;
+            }
+            return null;
+        } catch (err) {
+            return null;
+        }
+    };
+
+    /** 2. Call API (Tujhya existing handling sah) */
+    const callApi = useCallback(
+        async (url, payload = null, method = "POST", responseType = "json", contentType = "application/json", extraConfig = {}, returnDataOnly = true) => {
+            setLoading(true); // Tujhe loading logic
+            const controller = new AbortController();
+            activeRequestsRef.current.add(controller);
+
+            const activeToken = sessionStorage.getItem("accessToken") || token;
+
+            const config = {
+                url,
+                method,
+                responseType,
+                headers: {
+                    "Content-Type": contentType,
+                    ...(activeToken && activeToken !== "undefined" && { Authorization: `Bearer ${activeToken}` })
+                },
+                signal: controller.signal,
+                ...extraConfig,
+            };
+
+            if (payload !== null) {
+                method.toUpperCase() === "GET" ? (config.params = payload) : (config.data = payload);
+            }
+
+            try {
+                const response = await axios(config);
+                if (!controller.signal.aborted) {
+                    
+                    // Tujhe original 440 Handling
+                    if (response?.data?.status === 440) {
+                        console.error("You have logged in another session");
+                        navigate("/");
+                        return;
+                    }
+
+                    // NAVIN: 401 Silent Refresh
+                    if (response?.data?.status === 401) {
+                        const newToken = await refreshToken();
+                        if (newToken) {
+                            return callApi(url, payload, method, responseType, contentType, extraConfig, returnDataOnly);
+                        } else {
+                            navigate("/");
+                            return;
+                        }
+                    }
+
+                    setData(response.data); // Tujhe data setting
+                    return returnDataOnly ? response.data : response;
+                }
+            } catch (err) {
+                const status = err.response?.status;
+
+                // 401 Catch handling
+                if (status === 401) {
+                    const newToken = await refreshToken();
+                    if (newToken) {
+                        const originalConfig = err.config;
+                        originalConfig.headers.Authorization = `Bearer ${newToken}`;
+                        return axios(originalConfig);
+                    }
+                }
+
+                // Tujhe original Catch logic (440 ani Error messages)
+                if (status === 440) navigate("/");
+
+                if (!axios.isCancel(err) && !controller.signal.aborted) {
+                    console.error("API call error:", err);
+                    const apiMessage = err.response?.data?.message || "Something went wrong";
+                    snackbar.showError(apiMessage); // Tujhe snackbar handling
+                }
+            } finally {
+                activeRequestsRef.current.delete(controller);
+                setLoading(false); // Tujhe loading false
+            }
+        },
+        [navigate, snackbar, token, dispatch]
+    );
+
+    return { data, loading, callApi, refreshToken };
+};
+
+export default useApi;
