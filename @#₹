@@ -1,0 +1,78 @@
+/** Refresh token handler (Silent Refresh) */
+const refreshToken = async () => {
+    try {
+        console.log("Starting Silent Refresh...");
+        const expiredToken = sessionStorage.getItem("accessToken"); 
+
+        const res = await axios.post(
+            `${resolveConfig("/LS") ?? ""}/Auth/refresh-token`,
+            { token: expiredToken }, 
+            { withCredentials: true }
+        );
+        
+        if (res.status === 200 || res.data.status === "Success") {
+            const newToken = res.data.token; 
+            
+            // Session Storage update करा
+            sessionStorage.setItem("accessToken", newToken);
+            
+            // Redux store update करा (जेणेकरून app ला नवीन token कळेल)
+            dispatch(setToken(newToken)); 
+            
+            console.log("Token Refreshed Successfully!");
+            return newToken;
+        }
+    } catch (err) {
+        console.error("Silent Refresh failed, logging out...", err);
+        sessionStorage.clear();
+        navigate("/"); 
+        return null;
+    }
+};
+
+
+
+        const response = await axios(config);
+
+        if (!controller.signal.aborted) {
+            // Loud Logout Logic (Status 440 - Multiple Session)
+            if (response.data.status === 440) {
+                console.error("Concurrent login detected");
+                navigate("/");
+                return;
+            }
+
+            // Silent Refresh Logic (Status 401 - Token Expired)
+            if (response?.data?.status === 401) {
+                const newToken = await refreshToken();
+                if (newToken) {
+                    // नवीन token सह पुन्हा API कॉल करा
+                    return callApi(url, payload, method, responseType, contentType, extraConfig, returnDataOnly);
+                }
+            }
+
+            setData(response.data);
+            return returnDataOnly ? response.data : response;
+        }
+    } catch (err) {
+        const status = err.response?.status;
+
+        // Catch block मध्ये पण 401 handle करा (Axios errors साठी)
+        if (status === 401) {
+            const newToken = await refreshToken();
+            if (newToken) {
+                const originalConfig = err.config;
+                originalConfig.headers.Authorization = `Bearer ${newToken}`;
+                return axios(originalConfig); // Failed API पुन्हा सुरु करा
+            }
+        }
+
+        if (status === 440) {
+            navigate("/");
+        }
+
+        if (!axios.isCancel(err) && !controller.signal.aborted) {
+            console.error("API call error:", err);
+            // तुमची existing error handling इथे ठेवा
+        }
+    }
