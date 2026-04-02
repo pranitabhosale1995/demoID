@@ -1,0 +1,86 @@
+import axios from "axios";
+
+let isRefreshing = false;
+let failedQueue = [];
+
+const processQueue = (error, token = null) => {
+  failedQueue.forEach(prom => {
+    if (error) prom.reject(error);
+    else prom.resolve(token);
+  });
+  failedQueue = [];
+};
+
+axios.interceptors.response.use(
+  response => response,
+  async error => {
+    const originalRequest = error.config;
+
+    // ❌ Refresh API ला interceptor लागू होऊ नये
+    if (originalRequest.url.includes("/auth/refresh-token")) {
+      logoutAndRedirect();
+      return Promise.reject(error);
+    }
+
+    // 1️⃣ Concurrent login (another device)
+    if (error.response?.data?.error === "CONCURRENT_LOGIN") {
+      alert("Session expired. Logged in from another device.");
+      logoutAndRedirect();
+      return Promise.reject(error);
+    }
+
+    // 2️⃣ Token expired → Silent refresh
+    if (error.response?.status === 401 && !originalRequest._retry) {
+
+      originalRequest._retry = true; // ✅ VERY IMPORTANT
+
+      if (isRefreshing) {
+        return new Promise((resolve, reject) => {
+          failedQueue.push({ resolve, reject });
+        }).then(token => {
+          originalRequest.headers["Authorization"] = "Bearer " + token;
+          return axios(originalRequest);
+        });
+      }
+
+      isRefreshing = true;
+
+      try {
+        const refreshToken = localStorage.getItem("refreshToken");
+
+        const { data } = await axios.post(
+          "/auth/refresh-token",
+          { refreshToken },
+          { skipAuthRefresh: true }
+        );
+
+        localStorage.setItem("accessToken", data.accessToken);
+        localStorage.setItem("refreshToken", data.refreshToken);
+
+        axios.defaults.headers.common["Authorization"] =
+          "Bearer " + data.accessToken;
+
+        processQueue(null, data.accessToken);
+        isRefreshing = false;
+
+        originalRequest.headers["Authorization"] =
+          "Bearer " + data.accessToken;
+
+        return axios(originalRequest);
+
+      } catch (err) {
+        processQueue(err, null);
+        isRefreshing = false;
+        logoutAndRedirect();
+        return Promise.reject(err);
+      }
+    }
+
+    return Promise.reject(error);
+  }
+);
+
+function logoutAndRedirect() {
+  localStorage.clear();
+  window.location.href = "/login";
+}
